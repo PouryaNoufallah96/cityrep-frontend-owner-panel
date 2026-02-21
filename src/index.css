@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-vazir: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+
+  --color-primary-50: #f3f0ff;
+  --color-primary-100: #e9e3ff;
+  --color-primary-200: #d4c8ff;
+  --color-primary-300: #b39dff;
+  --color-primary-400: #9171ff;
+  --color-primary-500: #7c4dff;
+  --color-primary-600: #6c3ce6;
+  --color-primary-700: #5a2dbf;
+  --color-primary-800: #4a2599;
+  --color-primary-900: #3d1f7d;
+}
+
+/* Base layer */
+@layer base {
+
+  *,
+  *::before,
+  *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-vazir);
+    direction: rtl;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f5f5f5;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #bdbdbd;
+  }
+}
+
+/* Toastify override */
+.Toastify__toast {
+  font-family: var(--font-vazir) !important;
+  direction: rtl !important;
+}
