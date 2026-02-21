@@ -7,13 +7,11 @@ import { useRequestOtp, useVerifyOtp, useGymOwnerData } from '../../hooks/useAut
 import Logo from '../../components/Logo';
 
 type Step = 'phone' | 'otp';
-type Tab = 'login' | 'register';
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [tab, setTab] = useState<Tab>('login');
     const [step, setStep] = useState<Step>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState(['', '', '', '']);
@@ -142,18 +140,11 @@ export default function LoginPage() {
                             {/* Tabs */}
                             <div className="flex items-center justify-center gap-2 mb-9 text-[15px]">
                                 <span
-                                    className={`px-4 py-1.5 rounded-md cursor-pointer font-medium transition-colors ${tab === 'login' ? 'text-primary-600 font-semibold' : 'text-gray-500'}`}
-                                    onClick={() => setTab('login')}
+                                    className={`px-4 py-1.5 rounded-md cursor-pointer font-medium transition-colors`}
                                 >
-                                    ورود
+                                    ورود | ثبت نام
                                 </span>
-                                <span className="text-gray-300 font-light">|</span>
-                                <span
-                                    className={`px-4 py-1.5 rounded-md cursor-pointer font-medium transition-colors ${tab === 'register' ? 'text-primary-600 font-semibold' : 'text-gray-500'}`}
-                                    onClick={() => setTab('register')}
-                                >
-                                    ثبت نام
-                                </span>
+
                             </div>
 
                             <form onSubmit={handleSendOtp}>

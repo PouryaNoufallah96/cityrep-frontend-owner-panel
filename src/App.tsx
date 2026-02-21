@@ -7,6 +7,7 @@ import { ProtectedRoute, GuestRoute } from './components/RouteGuards';
 import LoginPage from './pages/Login/LoginPage';
 import RegisterPage from './pages/Register/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import SchedulePage from './pages/Schedule/SchedulePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/schedule"
+              element={
+                <ProtectedRoute>
+                  <SchedulePage />
                 </ProtectedRoute>
               }
             />
