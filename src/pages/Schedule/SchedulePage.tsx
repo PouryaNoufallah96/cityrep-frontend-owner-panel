@@ -231,84 +231,90 @@ export default function SchedulePage() {
             <Sidebar />
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Header */}
-                <header className="shrink-0 flex items-center justify-between px-8 py-4 bg-white border-b border-gray-200 z-20 relative">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-primary-500" />
-                        <h1 className="text-sm font-semibold text-gray-800">مدیریت زمان‌بندی</h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-600">
-                            {gymOwner?.fullName}
-                        </span>
-                        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                            <BsPerson size={18} />
-                        </div>
-                    </div>
-                </header>
+
 
                 {/* Main Content scrollable */}
                 <main className="flex-1 overflow-y-auto p-8 max-sm:p-4 bg-gray-50 relative z-10">
-                    <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 p-8 min-h-[calc(100vh-140px)] flex flex-col">
+                    <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
 
-                        {/* Trends Tab */}
-                        <TrendTabs
-                            trends={MOCK_TRENDS}
-                            selectedTrend={selectedTrend}
-                            setSelectedTrend={setSelectedTrend}
-                        />
-
-                        {/* Calendar Board */}
-                        <div className="flex-1 overflow-auto pb-6 border-b border-gray-100 custom-scrollbar relative flex min-h-[644px]">
-                            <div className="flex min-w-[max-content] flex-1 pb-24">
-                                {WEEK_DAYS.map((day, index) => {
-                                    const daySessions = localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend);
-
-                                    return (
-                                        <div key={day.id} className={`w-[270px] shrink-0 flex flex-col px-3 bg-[#e8e8e840] ${index > 0 ? 'border-r border-[#e8e8e8]' : ''}`}>
-                                            <h3 className="text-[13px] font-bold text-gray-700 text-center mb-6 pt-2">
-                                                {day.name}
-                                            </h3>
-
-                                            <div className="flex flex-col gap-4">
-                                                {daySessions.map((session, sIndex) => (
-                                                    <SessionCard
-                                                        key={session._clientId}
-                                                        session={session}
-                                                        index={sIndex}
-                                                        activePicker={activePicker}
-                                                        setActivePicker={setActivePicker}
-                                                        pickerRef={pickerRef}
-                                                        updateSession={updateSession}
-                                                        confirmDelete={confirmDelete}
-                                                        toggleAllDays={handleToggleAllDays}
-                                                    />
-                                                ))}
-
-                                                {/* Add Session Button */}
-                                                <button
-                                                    onClick={() => handleAddSession(day.id)}
-                                                    className="w-full py-[14px] border-[1.5px] border-dashed border-primary-200 rounded-[12px] text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary-50 transition-all duration-200 bg-white"
-                                                >
-                                                    <HiOutlinePlus size={16} className="text-primary-400" />
-                                                    افزودن سانس
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
+                        {/* Top Header Card */}
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-primary-500" />
+                                <h1 className="text-base font-bold text-gray-800">مدیریت زمان‌بندی</h1>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-600 font-medium">
+                                    {gymOwner?.fullName}
+                                </span>
+                                <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
+                                    <BsPerson size={24} />
+                                </div>
                             </div>
                         </div>
 
-                        {/* Submit DB Changes */}
-                        <div className="pt-6 mt-6 flex items-center justify-start shrink-0">
-                            <button
-                                onClick={handlePreSave}
-                                disabled={isSaving}
-                                className="px-10 py-3.5 bg-primary-600 text-white rounded-[12px] text-[13px] font-bold shadow-[0_4px_20px_rgba(124,77,255,0.25)] hover:bg-primary-700 hover:shadow-[0_4px_25px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 transition-all outline-none disabled:opacity-70 disabled:hover:translate-y-0 disabled:cursor-wait"
-                            >
-                                {isSaving ? 'در حال ثبت...' : 'ثبت تغییرات'}
-                            </button>
+                        {/* Content Card */}
+                        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 p-8 min-h-[calc(100vh-220px)] flex flex-col">
+
+                            {/* Trends Tab */}
+                            <TrendTabs
+                                trends={MOCK_TRENDS}
+                                selectedTrend={selectedTrend}
+                                setSelectedTrend={setSelectedTrend}
+                            />
+
+                            {/* Calendar Board */}
+                            <div className="flex-1 overflow-auto pb-6 border-b border-gray-100 custom-scrollbar relative flex min-h-[644px]">
+                                <div className="flex min-w-[max-content] flex-1 pb-24">
+                                    {WEEK_DAYS.map((day, index) => {
+                                        const daySessions = localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend);
+
+                                        return (
+                                            <div key={day.id} className={`w-[270px] shrink-0 flex flex-col px-3 bg-[#e8e8e840] ${index > 0 ? 'border-r border-[#e8e8e8]' : ''}`}>
+                                                <h3 className="text-[13px] font-bold text-gray-700 text-center mb-5 pt-5">
+                                                    {day.name}
+                                                </h3>
+
+                                                <div className="flex flex-col gap-4">
+                                                    {daySessions.map((session, sIndex) => (
+                                                        <SessionCard
+                                                            key={session._clientId}
+                                                            session={session}
+                                                            index={sIndex}
+                                                            activePicker={activePicker}
+                                                            setActivePicker={setActivePicker}
+                                                            pickerRef={pickerRef}
+                                                            updateSession={updateSession}
+                                                            confirmDelete={confirmDelete}
+                                                            toggleAllDays={handleToggleAllDays}
+                                                        />
+                                                    ))}
+
+                                                    {/* Add Session Button */}
+                                                    <button
+                                                        onClick={() => handleAddSession(day.id)}
+                                                        className="w-full py-[14px] border-[1.5px] border-dashed border-primary-200 rounded-[12px] text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary-50 transition-all duration-200 bg-white"
+                                                    >
+                                                        <HiOutlinePlus size={16} className="text-primary-400" />
+                                                        افزودن سانس
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Submit DB Changes */}
+                            <div className="pt-6 mt-6 flex items-center justify-start shrink-0">
+                                <button
+                                    onClick={handlePreSave}
+                                    disabled={isSaving}
+                                    className="px-10 py-3.5 bg-primary-600 text-white rounded-[12px] text-[13px] font-bold shadow-[0_4px_20px_rgba(124,77,255,0.25)] hover:bg-primary-700 hover:shadow-[0_4px_25px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 transition-all outline-none disabled:opacity-70 disabled:hover:translate-y-0 disabled:cursor-wait"
+                                >
+                                    {isSaving ? 'در حال ثبت...' : 'ثبت تغییرات'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </main>

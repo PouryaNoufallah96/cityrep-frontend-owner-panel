@@ -1,12 +1,13 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BsGrid, BsPerson, BsCalendar3, BsPeople } from 'react-icons/bs';
+import { BsGrid, BsPerson, BsCalendar3, BsPeople, BsViewList } from 'react-icons/bs';
 import Logo from '../Logo';
 import { useAuth } from '../../context/AuthContext';
 
 const SIDEBAR_ITEMS = [
     { label: 'داشبورد', icon: BsGrid, path: '/dashboard' },
-    { label: 'حساب کاربری', icon: BsPerson, path: '/register' },
+    { label: 'حساب کاربری', icon: BsPerson, path: '/profile' },
     { label: 'مدیریت زمان‌بندی', icon: BsCalendar3, path: '/schedule' },
+    { label: 'لیست کلاس‌ها', icon: BsViewList, path: '/classes' },
     { label: 'لیست رزروها', icon: BsPeople, path: '/reservations' },
 ];
 

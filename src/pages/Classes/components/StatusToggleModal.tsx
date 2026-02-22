@@ -1,0 +1,105 @@
+import { LuTriangleAlert, LuX } from 'react-icons/lu';
+
+export interface ClassItemData {
+    id: string;
+    day: string;
+    sport: string;
+    gender: string;
+    price: string;
+    time: string;
+    reservations: number;
+    isActive: boolean;
+}
+
+interface StatusToggleModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onConfirm: () => void;
+    classData: ClassItemData | null;
+}
+
+export default function StatusToggleModal({ isOpen, onClose, onConfirm, classData }: StatusToggleModalProps) {
+    if (!isOpen || !classData) return null;
+
+    const isDeactivating = classData.isActive;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" dir="rtl">
+            <div className="bg-white rounded-[20px] w-full max-w-[440px] shadow-2xl relative animate-[scaleIn_0.2s_ease-out] p-6 pb-8">
+
+                {/* Close Button */}
+                <button onClick={onClose} className="absolute top-4 left-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                    <LuX size={20} />
+                </button>
+
+                <div className="flex flex-col items-center mt-2 mb-8">
+                    <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center text-amber-500 mb-4 border-[6px] border-amber-50/50">
+                        <LuTriangleAlert size={24} />
+                    </div>
+                    <h3 className="text-[16px] font-bold text-gray-900 mb-1">
+                        {isDeactivating ? 'غیرفعال کردن سانس' : 'فعال کردن سانس'}
+                    </h3>
+                    <p className="text-[13px] text-gray-500">
+                        {isDeactivating ? 'آیا از غیرفعال کردن سانس مطمئن هستید؟' : 'آیا از فعال کردن سانس مطمئن هستید؟'}
+                    </p>
+                </div>
+
+                {/* Details list */}
+                <div className="flex flex-col gap-3 py-6 px-4 bg-gray-50/50 rounded-xl mb-6 border border-gray-100">
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">روز</span>
+                        <span className="font-semibold text-gray-800">{classData.day}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">نام رشته</span>
+                        <span className="font-semibold text-gray-800">{classData.sport}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">جنسیت</span>
+                        <span className="font-semibold text-gray-800">{classData.gender}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">مبلغ (تومان)</span>
+                        <span className="font-semibold text-gray-800">{classData.price}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">زمان ورزش</span>
+                        <span className="font-semibold text-gray-800" dir="rtl">{classData.time}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[13px]">
+                        <span className="text-gray-500">تعداد رزرو</span>
+                        <span className="font-semibold text-gray-800">{classData.reservations}</span>
+                    </div>
+                </div>
+
+                {/* Warning box */}
+                <div className="flex gap-3 p-4 bg-amber-50 rounded-xl mb-7 border border-amber-100/50">
+                    <LuTriangleAlert className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                    <p className="text-[12px] text-amber-700 font-medium leading-relaxed">
+                        {isDeactivating
+                            ? 'با غیرفعال کردن سانس، این سانس برای کاربران نمایش داده نمی‌شود.'
+                            : 'با فعال کردن سانس، این سانس برای کاربران نمایش داده می‌شود.'
+                        }
+                    </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-4">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 h-[48px] bg-white border border-gray-200 text-gray-600 rounded-[12px] text-[14px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        انصراف
+                    </button>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors shadow-[0_4px_12px_rgba(124,77,255,0.25)]"
+                    >
+                        تایید
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    );
+}

@@ -8,6 +8,8 @@ import LoginPage from './pages/Login/LoginPage';
 import RegisterPage from './pages/Register/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import SchedulePage from './pages/Schedule/SchedulePage';
+import ProfilePage from './pages/Profile/ProfilePage';
+import ClassesPage from './pages/Classes/ClassesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,10 +54,26 @@ function App() {
               }
             />
             <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/schedule"
               element={
                 <ProtectedRoute>
                   <SchedulePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/classes"
+              element={
+                <ProtectedRoute>
+                  <ClassesPage />
                 </ProtectedRoute>
               }
             />

@@ -182,55 +182,62 @@ export default function RegisterPage() {
             <Sidebar />
 
             <div className="flex-1 flex flex-col bg-gray-50">
-                <header className="flex items-center justify-end px-8 py-4 bg-white border-b border-gray-200 gap-3">
-                    <div className="flex items-center gap-2 text-[13px] text-gray-500">
-                        <div className="w-2 h-2 rounded-full bg-amber-500" />
-                        حساب کاربری
-                    </div>
-                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                        <BsPerson size={18} />
-                    </div>
-                </header>
 
-                <main className="flex-1 p-10 flex justify-center max-sm:p-5 overflow-y-auto">
-                    <div className="w-full max-w-[650px] bg-white rounded-2xl p-10 shadow-sm animate-[fadeIn_0.4s_ease-out] max-sm:p-6 mb-auto">
 
-                        <h1 className="text-center text-lg font-bold text-gray-900 mb-2">ثبت نام باشگاه</h1>
-                        <p className="text-center text-[13px] text-gray-500 mb-9">لطفا جهت ثبت نام اطلاعات خواسته شده را وارد کنید.</p>
+                <main className="flex-1 p-8 max-sm:p-4 overflow-y-auto">
+                    <div className="max-w-[1200px] mx-auto flex flex-col gap-6 items-center">
 
-                        <RegisterStepper steps={STEPS} currentStep={currentStep} />
-
-                        <div className="min-h-[250px]">
-                            {renderStepContent()}
+                        {/* Top Header Card */}
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-primary-500" />
+                                <h1 className="text-base font-bold text-gray-800">حساب کاربری</h1>
+                            </div>
+                            <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
+                                <BsPerson size={24} />
+                            </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-9 gap-4">
-                            <button
-                                type="button"
-                                onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
-                                disabled={isSubmitting}
-                                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-br from-primary-400 to-primary-500 text-white rounded-[10px] text-sm font-semibold cursor-pointer transition-all duration-250 hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_4px_15px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
-                            >
-                                {isSubmitting ? (
-                                    <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                ) : (
-                                    <>
-                                        {currentStep === STEPS.length - 1 ? 'ثبت باشگاه' : 'بعدی'}
-                                        <HiOutlineArrowLeft />
-                                    </>
-                                )}
-                            </button>
+                        {/* Content Card */}
+                        <div className="w-full max-w-[650px] bg-white rounded-2xl p-10 shadow-sm animate-[fadeIn_0.4s_ease-out] max-sm:p-6 mb-auto border border-gray-100 min-h-[calc(100vh-220px)]">
 
-                            {currentStep > 0 && (
+                            <h1 className="text-center text-lg font-bold text-gray-900 mb-2">ثبت نام باشگاه</h1>
+                            <p className="text-center text-[13px] text-gray-500 mb-9">لطفا جهت ثبت نام اطلاعات خواسته شده را وارد کنید.</p>
+
+                            <RegisterStepper steps={STEPS} currentStep={currentStep} />
+
+                            <div className="min-h-[250px]">
+                                {renderStepContent()}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-9 gap-4">
                                 <button
                                     type="button"
-                                    onClick={handlePrevious}
-                                    className="flex items-center gap-2 px-6 py-3 bg-transparent text-gray-500 border-[1.5px] border-gray-300 rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-200 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                                    onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
+                                    disabled={isSubmitting}
+                                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-br from-primary-400 to-primary-500 text-white rounded-[10px] text-sm font-semibold cursor-pointer transition-all duration-250 hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_4px_15px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
                                 >
-                                    <HiOutlineArrowRight />
-                                    قبلی
+                                    {isSubmitting ? (
+                                        <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            {currentStep === STEPS.length - 1 ? 'ثبت باشگاه' : 'بعدی'}
+                                            <HiOutlineArrowLeft />
+                                        </>
+                                    )}
                                 </button>
-                            )}
+
+                                {currentStep > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handlePrevious}
+                                        className="flex items-center gap-2 px-6 py-3 bg-transparent text-gray-500 border-[1.5px] border-gray-300 rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-200 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50"
+                                    >
+                                        <HiOutlineArrowRight />
+                                        قبلی
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </main>

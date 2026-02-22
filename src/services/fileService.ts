@@ -8,7 +8,7 @@ export const fileService = {
         const response = await api.post('/File/UploadFile', formData, {
             params: fileName ? { fileName } : undefined,
         });
-        return response.data;
+        return response.data.data;
     },
 
     getFileUrl(fileName: string): string {

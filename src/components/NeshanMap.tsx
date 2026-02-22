@@ -5,6 +5,9 @@ interface NeshanMapProps {
     longitude: number;
     onLocationChange: (lat: number, lng: number) => void;
     height?: string;
+    hideSearch?: boolean;
+    hideCoordinates?: boolean;
+    readOnly?: boolean;
 }
 
 declare global {
@@ -13,7 +16,7 @@ declare global {
     }
 }
 
-const NESHAN_MAP_API_KEY = 'web.e42e22f5a3834e8a944faf590e417fda';
+const NESHAN_MAP_API_KEY = 'web.59e7c4d7f7ab4ab2a22c05b35fe88459';
 const NESHAN_MAP_SDK_URL = 'https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.js';
 const NESHAN_MAP_CSS_URL = 'https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.css';
 
@@ -22,6 +25,9 @@ export default function NeshanMap({
     longitude = 51.389,
     onLocationChange,
     height = '300px',
+    hideSearch = false,
+    hideCoordinates = false,
+    readOnly = false,
 }: NeshanMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
@@ -82,26 +88,33 @@ export default function NeshanMap({
                 traffic: false,
                 center: [latitude, longitude],
                 zoom: 14,
+                dragging: !readOnly,
+                touchZoom: !readOnly,
+                scrollWheelZoom: !readOnly,
+                doubleClickZoom: !readOnly,
+                zoomControl: !readOnly
             });
 
             mapRef.current = map;
 
             // Add marker
-            const marker = window.L.marker([latitude, longitude], { draggable: true }).addTo(map);
+            const marker = window.L.marker([latitude, longitude], { draggable: !readOnly }).addTo(map);
             markerRef.current = marker;
 
-            // Marker drag end
-            marker.on('dragend', () => {
-                const pos = marker.getLatLng();
-                onLocationChange(pos.lat, pos.lng);
-            });
+            if (!readOnly) {
+                // Marker drag end
+                marker.on('dragend', () => {
+                    const pos = marker.getLatLng();
+                    onLocationChange(pos.lat, pos.lng);
+                });
 
-            // Map click
-            map.on('click', (e: any) => {
-                const { lat, lng } = e.latlng;
-                marker.setLatLng([lat, lng]);
-                onLocationChange(lat, lng);
-            });
+                // Map click
+                map.on('click', (e: any) => {
+                    const { lat, lng } = e.latlng;
+                    marker.setLatLng([lat, lng]);
+                    onLocationChange(lat, lng);
+                });
+            }
         } catch (err) {
             console.error('Neshan map init error:', err);
         }
@@ -112,7 +125,7 @@ export default function NeshanMap({
                 mapRef.current = null;
             }
         };
-    }, [isLoaded]);
+    }, [isLoaded, readOnly]);
 
     // Update marker when lat/lng props change externally
     useEffect(() => {
@@ -127,7 +140,7 @@ export default function NeshanMap({
         try {
             const res = await fetch(
                 `https://api.neshan.org/v1/search?term=${encodeURIComponent(searchQuery)}&lat=${latitude}&lng=${longitude}`,
-                { headers: { 'Api-Key': 'service.3ac36fba46c74a3d9b9a1a7e6c47d5ce' } }
+                { headers: { 'Api-Key': 'service.294c9407cfcb4250b763ed8ecff066cf' } }
             );
             const data = await res.json();
             if (data.items?.length > 0) {
@@ -144,29 +157,31 @@ export default function NeshanMap({
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full flex flex-col h-full bg-white">
             {/* Search */}
-            <div className="flex gap-2 mb-3">
-                <input
-                    type="text"
-                    className="flex-1 px-4 py-2.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/10 outline-none"
-                    placeholder="جستجوی آدرس..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    dir="rtl"
-                />
-                <button
-                    type="button"
-                    onClick={handleSearch}
-                    className="px-5 py-2.5 bg-primary-500 text-white text-sm font-medium rounded-[10px] hover:bg-primary-600 transition-colors"
-                >
-                    جستجو
-                </button>
-            </div>
+            {!hideSearch && !readOnly && (
+                <div className="flex gap-2 mb-3">
+                    <input
+                        type="text"
+                        className="flex-1 px-4 py-2.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/10 outline-none"
+                        placeholder="جستجوی آدرس..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        dir="rtl"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleSearch}
+                        className="px-5 py-2.5 bg-primary-500 text-white text-sm font-medium rounded-[10px] hover:bg-primary-600 transition-colors"
+                    >
+                        جستجو
+                    </button>
+                </div>
+            )}
 
             {/* Map */}
-            <div className="relative rounded-xl overflow-hidden border border-gray-200">
+            <div className={`relative rounded-xl overflow-hidden border border-gray-200 flex-1 min-h-0 ${!readOnly ? 'shadow-sm' : 'border-none'}`}>
                 {!isLoaded && (
                     <div
                         className="flex items-center justify-center bg-gray-50 text-gray-400 text-sm"
@@ -178,13 +193,13 @@ export default function NeshanMap({
                 )}
                 <div
                     ref={mapContainerRef}
-                    style={{ height, display: isLoaded ? 'block' : 'none' }}
-                    className="w-full"
+                    style={{ height: height || '100%', display: isLoaded ? 'block' : 'none' }}
+                    className="w-full h-full"
                 />
             </div>
 
             {/* Coordinates display */}
-            {latitude && longitude && (
+            {!hideCoordinates && !readOnly && latitude && longitude && (
                 <div className="flex gap-4 mt-3 text-xs text-gray-400" dir="ltr">
                     <span>Lat: {latitude.toFixed(6)}</span>
                     <span>Lng: {longitude.toFixed(6)}</span>

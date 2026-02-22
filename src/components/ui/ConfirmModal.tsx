@@ -5,7 +5,8 @@ interface ConfirmModalProps {
     onClose: () => void;
     onConfirm: () => void;
     title: string;
-    details: { label: string; value: string }[];
+    subtitle?: string;
+    details?: { label: string; value: string }[];
     confirmText?: string;
     cancelText?: string;
     isDestructive?: boolean;
@@ -16,6 +17,7 @@ export default function ConfirmModal({
     onClose,
     onConfirm,
     title,
+    subtitle,
     details,
     confirmText = 'تایید',
     cancelText = 'انصراف',
@@ -40,18 +42,24 @@ export default function ConfirmModal({
                         <HiOutlineExclamationCircle size={28} />
                     </div>
 
-                    <h3 className="text-base font-bold text-gray-900 mb-6">
+                    <h3 className={`text-base font-bold text-gray-900 ${subtitle ? 'mb-2' : 'mb-6'} text-center`}>
                         {title}
                     </h3>
 
-                    <div className="w-full bg-gray-50 rounded-xl p-4 flex flex-col gap-3">
-                        {details.map((detail, index) => (
-                            <div key={index} className="flex justify-between items-center text-[13px]">
-                                <span className="text-gray-500 font-medium">{detail.label}</span>
-                                <span className="text-gray-900 font-bold">{detail.value}</span>
-                            </div>
-                        ))}
-                    </div>
+                    {subtitle && (
+                        <p className="text-[13px] text-gray-600 font-medium mb-6 text-center">{subtitle}</p>
+                    )}
+
+                    {details && details.length > 0 && (
+                        <div className="w-full bg-gray-50 rounded-xl p-4 flex flex-col gap-3">
+                            {details.map((detail, index) => (
+                                <div key={index} className="flex justify-between items-center text-[13px]">
+                                    <span className="text-gray-500 font-medium">{detail.label}</span>
+                                    <span className="text-gray-900 font-bold">{detail.value}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Buttons */}
