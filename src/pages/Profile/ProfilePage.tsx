@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BsPerson } from 'react-icons/bs';
 import { LuPen, LuBuilding2, LuPhone, LuMapPin, LuUser, LuPlus } from 'react-icons/lu';
 import Sidebar from '../../components/layout/Sidebar';
@@ -7,16 +7,18 @@ import EditGymInfoModal from './components/EditGymInfoModal';
 import EditLocationModal from './components/EditLocationModal';
 import EditImagesModal from './components/EditImagesModal';
 
-const SPORTS = [
-    { id: 1, name: 'فیتنس', isActive: true },
-    { id: 2, name: 'بدنسازی', isActive: true },
-    { id: 3, name: 'پیلاتس', isActive: true },
-    { id: 4, name: 'تمرینات قدرتی', isActive: false },
-    { id: 5, name: 'کراس فیت', isActive: true },
-];
+import { useGymTrends } from '../../hooks/useGym';
 
 export default function ProfilePage() {
-    const [sportsStatus, setSportsStatus] = useState(SPORTS);
+    const { data: apiResponse } = useGymTrends();
+    const apiTrends = Array.isArray(apiResponse) ? apiResponse : (apiResponse?.data || []);
+    const [sportsStatus, setSportsStatus] = useState<{ id: string | number, name: string, isActive: boolean }[]>(apiTrends.map((t: any) => ({ id: t.gymTrendId, name: t.title, isActive: true })));
+
+    useEffect(() => {
+        if (!sportsStatus.length && apiTrends?.length) {
+            setSportsStatus(apiTrends.map((t: any) => ({ id: t.gymTrendId, name: t.title, isActive: true })));
+        }
+    }, [apiTrends]);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function ProfilePage() {
         address: 'شریعتی، بعد از قبا، میناب پنجم، بالاتر از مجتمع تجاری، پلاک ۲'
     });
 
-    const toggleSport = (id: number) => {
+    const toggleSport = (id: string | number) => {
         setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
     };
 

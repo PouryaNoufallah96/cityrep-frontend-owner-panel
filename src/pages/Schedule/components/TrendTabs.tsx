@@ -18,7 +18,11 @@ export default function TrendTabs({ trends, selectedTrend, setSelectedTrend }: T
                                 ? 'border-primary-200 bg-primary-50 text-primary-700'
                                 : 'border-gray-100/80 bg-white text-gray-500 hover:border-gray-200 hover:bg-gray-50'}`}
                     >
-                        <span className="text-3xl mb-2">{trend.iconUrl}</span>
+                        {trend.iconUrl?.includes('File/DownloadFile') ? (
+                            <img src={trend.iconUrl} alt={trend.title} className="w-9 h-9 mb-2 object-contain" />
+                        ) : (
+                            <span className="text-3xl mb-2">{trend.iconUrl}</span>
+                        )}
                         <span className={`text-[13px] ${isActive ? 'font-bold' : 'font-medium'}`}>
                             {trend.title}
                         </span>

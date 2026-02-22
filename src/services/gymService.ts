@@ -76,11 +76,7 @@ export const gymService = {
     },
 
     async getAllTrends() {
-        const response = await api.post('/GymTrend/GetAll', {
-            pagination: { page: 1, pageSize: 100 },
-            filters: [],
-            sorts: [],
-        });
+        const response = await api.post('/GymTrend/GetAllForGymOwner');
         return response.data;
     },
 };

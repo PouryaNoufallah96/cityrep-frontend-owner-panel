@@ -22,7 +22,11 @@ export default function SportTrendsStep({ formData, toggleTrend, trends }: Sport
                             }`}
                     >
                         <div className="flex items-center gap-2">
-                            <span className="text-base">{trend.iconUrl || '🏋️'}</span>
+                            {trend.iconUrl?.includes('File/DownloadFile') ? (
+                                <img src={trend.iconUrl} alt={trend.title} className="w-5 h-5 object-contain" />
+                            ) : (
+                                <span className="text-base">{trend.iconUrl || '🏋️'}</span>
+                            )}
                             <span className="text-[13px] font-medium text-gray-900">{trend.title}</span>
                         </div>
                         <div

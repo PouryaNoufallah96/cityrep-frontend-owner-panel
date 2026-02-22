@@ -6,15 +6,25 @@ import Sidebar from '../../components/layout/Sidebar';
 import { scheduleService } from '../../services/scheduleService';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import { toast } from 'react-toastify';
-import { MOCK_TRENDS, WEEK_DAYS } from './constants';
+import { WEEK_DAYS } from './constants';
 import type { LocalSession } from './types';
 import TrendTabs from './components/TrendTabs';
 import SessionCard from './components/SessionCard';
 import SaveOptionsModal from './components/SaveOptionsModal';
+import { useGymTrends } from '../../hooks/useGym';
 
 export default function SchedulePage() {
     const { gymOwner } = useAuth();
-    const [selectedTrend, setSelectedTrend] = useState(MOCK_TRENDS[0].id);
+
+    const { data: apiResponse } = useGymTrends();
+    const apiTrends = Array.isArray(apiResponse) ? apiResponse : (apiResponse?.data || []);
+    const trends = apiTrends.map((t: any) => ({
+        id: t.gymTrendId,
+        title: t.title,
+        iconUrl: t.iconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.iconUrl}` : '🏋️'
+    })) || [];
+
+    const [selectedTrend, setSelectedTrend] = useState('');
     const [localSessions, setLocalSessions] = useState<LocalSession[]>([]);
     const [loadedTrends, setLoadedTrends] = useState<Set<string>>(new Set());
 
@@ -29,7 +39,13 @@ export default function SchedulePage() {
     const [saveModalOpen, setSaveModalOpen] = useState(false);
 
     useEffect(() => {
-        if (!loadedTrends.has(selectedTrend)) {
+        if (trends.length > 0 && !selectedTrend) {
+            setSelectedTrend(trends[0].id);
+        }
+    }, [trends, selectedTrend]);
+
+    useEffect(() => {
+        if (selectedTrend && !loadedTrends.has(selectedTrend)) {
             loadSessions(selectedTrend);
         }
     }, [selectedTrend, loadedTrends]);
@@ -258,7 +274,7 @@ export default function SchedulePage() {
 
                             {/* Trends Tab */}
                             <TrendTabs
-                                trends={MOCK_TRENDS}
+                                trends={trends}
                                 selectedTrend={selectedTrend}
                                 setSelectedTrend={setSelectedTrend}
                             />
@@ -338,8 +354,8 @@ export default function SchedulePage() {
                 isDestructive={true}
                 details={
                     deleteModal.sessionObj ? [
-                        { label: 'نام رشته', value: MOCK_TRENDS.find(t => t.id === deleteModal.sessionObj!.trendId)?.title || '' },
-                        { label: 'روز', value: WEEK_DAYS.find(d => d.id === deleteModal.sessionObj!.dayOfWeek)?.name || '' },
+                        { label: 'نام رشته', value: trends.find((t: any) => t.id === deleteModal.sessionObj!.trendId)?.title || '' },
+                        { label: 'روز', value: WEEK_DAYS.find((d: any) => d.id === deleteModal.sessionObj!.dayOfWeek)?.name || '' },
                         { label: 'ساعت شروع', value: deleteModal.sessionObj.fromTime || '-' },
                         { label: 'ساعت پایان', value: deleteModal.sessionObj.toTime || '-' }
                     ] : []

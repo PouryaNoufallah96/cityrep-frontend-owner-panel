@@ -60,8 +60,14 @@ export default function RegisterPage() {
     });
 
     const addGymMutation = useAddGym();
-    const { data: trendsData } = useGymTrends();
-    const trends = trendsData?.data?.length ? trendsData.data : SPORT_TRENDS_FALLBACK;
+    const { data: trendsResponse } = useGymTrends();
+    const trendsData = Array.isArray(trendsResponse) ? trendsResponse : (trendsResponse?.data || []);
+    const trends = trendsData?.length
+        ? trendsData.map((t: any) => ({
+            ...t,
+            iconUrl: t.iconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.iconUrl}` : (t.iconUrl || '🏋️')
+        }))
+        : SPORT_TRENDS_FALLBACK;
 
     const updateField = <K extends keyof GymFormData>(field: K, value: GymFormData[K]) => {
         setFormData((prev) => ({ ...prev, [field]: value }));

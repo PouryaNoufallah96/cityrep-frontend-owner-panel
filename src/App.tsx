@@ -10,6 +10,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import SchedulePage from './pages/Schedule/SchedulePage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ClassesPage from './pages/Classes/ClassesPage';
+import ReservationsPage from './pages/Reservations/ReservationsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ClassesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reservations"
+              element={
+                <ProtectedRoute>
+                  <ReservationsPage />
                 </ProtectedRoute>
               }
             />

@@ -2,30 +2,36 @@ import { useState, useRef, useEffect } from 'react';
 import { BsPerson, BsSearch, BsChevronDown, BsChevronLeft, BsChevronRight, BsCheck } from 'react-icons/bs';
 import { LuFilter, LuX } from 'react-icons/lu';
 import Sidebar from '../../components/layout/Sidebar';
-import StatusToggleModal, { type ClassItemData } from './components/StatusToggleModal';
 import { useGymTrends } from '../../hooks/useGym';
+import DateRangeModal from '../../components/ui/DateRangeModal';
+import { DateObject } from 'react-multi-date-picker';
+
+interface ReservationItem {
+    id: string;
+    userName: string;
+    sport: string;
+    date: string;
+    time: string;
+    price: string;
+    status: 'موفق' | 'ناموفق' | 'در انتظار';
+}
 
 const FILTER_OPTIONS = {
-    day: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
     sport: [],
-    gender: ['آقایان', 'بانوان'],
-    status: ['فعال', 'غیرفعال']
+    status: ['موفق', 'ناموفق', 'در انتظار']
 };
 
-const MOCK_DATA: ClassItemData[] = [
-    { id: '1', day: 'شنبه', sport: 'بدنسازی', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: 'تایم آزاد', reservations: 10, isActive: true },
-    { id: '2', day: 'شنبه', sport: 'یوگا', gender: 'بانوان', price: '۴۰۰,۰۰۰', time: '۱۴:۰۰ - ۱۵:۰۰', reservations: 2, isActive: true },
-    { id: '3', day: 'یک شنبه', sport: 'پیلاتس', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: '۱۷:۰۰ - ۱۸:۰۰', reservations: 10, isActive: true },
-    { id: '4', day: 'دوشنبه', sport: 'بدنسازی', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: 'تایم آزاد', reservations: 15, isActive: true },
-    { id: '5', day: 'سه شنبه', sport: 'بدنسازی', gender: 'بانوان', price: '۳۰۰,۰۰۰', time: 'تایم آزاد', reservations: 15, isActive: true },
-    { id: '6', day: 'سه شنبه', sport: 'بدنسازی', gender: 'بانوان', price: '۵۰۰,۰۰۰', time: 'تایم آزاد', reservations: 12, isActive: true },
-    { id: '7', day: 'چهار شنبه', sport: 'بادی پامپ', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: 'تایم آزاد', reservations: 8, isActive: true },
-    { id: '8', day: 'چهار شنبه', sport: 'یوگا', gender: 'بانوان', price: '۴۰۰,۰۰۰', time: '۱۶:۰۰ - ۱۷:۰۰', reservations: 9, isActive: true },
-    { id: '9', day: 'پنج شنبه', sport: 'پیلاتس', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: '۱۸:۰۰ - ۱۹:۰۰', reservations: 4, isActive: true },
-    { id: '10', day: 'جمعه', sport: 'بدنسازی', gender: 'آقایان', price: '۵۰۰,۰۰۰', time: 'تایم آزاد', reservations: 6, isActive: true },
+const MOCK_RESERVATIONS: ReservationItem[] = [
+    { id: '1', userName: 'علی احمدی', sport: 'بدنسازی', date: '۱۴۰۲/۰۶/۱۲', time: '۱۴:۰۰ - ۱۵:۰۰', price: '۵۰۰,۰۰۰', status: 'موفق' },
+    { id: '2', userName: 'سارا حسینی', sport: 'یوگا', date: '۱۴۰۲/۰۶/۱۲', time: '۱۶:۰۰ - ۱۷:۰۰', price: '۴۰۰,۰۰۰', status: 'موفق' },
+    { id: '3', userName: 'محمد رضایی', sport: 'پیلاتس', date: '۱۴۰۲/۰۶/۱۳', time: '۱۷:۰۰ - ۱۸:۰۰', price: '۵۰۰,۰۰۰', status: 'در انتظار' },
+    { id: '4', userName: 'زهرا نیازی', sport: 'بدنسازی', date: '۱۴۰۲/۰۶/۱۳', time: 'تایم آزاد', price: '۵۰۰,۰۰۰', status: 'ناموفق' },
+    { id: '5', userName: 'نیما کریمی', sport: 'بادی پامپ', date: '۱۴۰۲/۰۶/۱۴', time: 'تایم آزاد', price: '۵۰۰,۰۰۰', status: 'موفق' },
+    { id: '6', userName: 'مریم طاهری', sport: 'یوگا', date: '۱۴۰۲/۰۶/۱۵', time: '۱۶:۰۰ - ۱۷:۰۰', price: '۴۰۰,۰۰۰', status: 'موفق' },
+    { id: '7', userName: 'رضا قاسمی', sport: 'پیلاتس', date: '۱۴۰۲/۰۶/۱۵', time: '۱۸:۰۰ - ۱۹:۰۰', price: '۵۰۰,۰۰۰', status: 'موفق' },
 ];
 
-export default function ClassesPage() {
+export default function ReservationsPage() {
     const { data: apiResponse } = useGymTrends();
     const apiTrends = Array.isArray(apiResponse) ? apiResponse : (apiResponse?.data || []);
     const dynamicSportOptions = apiTrends.map((t: any) => t.title) || [];
@@ -38,9 +44,7 @@ export default function ClassesPage() {
     const [isFiltersOpen, setIsFiltersOpen] = useState(true);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [filters, setFilters] = useState<Record<string, string[]>>({
-        day: ['همه'],
         sport: ['همه'],
-        gender: ['همه'],
         status: ['همه']
     });
 
@@ -56,11 +60,10 @@ export default function ClassesPage() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const [classes, setClasses] = useState<ClassItemData[]>(MOCK_DATA);
-    const [statusModal, setStatusModal] = useState<{ isOpen: boolean; classData: ClassItemData | null }>({
-        isOpen: false,
-        classData: null
-    });
+    const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+    const [dateRange, setDateRange] = useState<DateObject[]>([]);
+
+    const [reservations] = useState<ReservationItem[]>(MOCK_RESERVATIONS);
 
     const toggleFilterItem = (type: string, value: string) => {
         setFilters(prev => {
@@ -119,17 +122,13 @@ export default function ClassesPage() {
         );
     };
 
-    const handleToggleClick = (cls: ClassItemData) => {
-        setStatusModal({ isOpen: true, classData: cls });
-    };
-
-    const handleConfirmStatus = () => {
-        if (statusModal.classData) {
-            setClasses(prev => prev.map(c =>
-                c.id === statusModal.classData!.id ? { ...c, isActive: !c.isActive } : c
-            ));
+    const getStatusStyle = (status: ReservationItem['status']) => {
+        switch (status) {
+            case 'موفق': return 'bg-green-50 text-green-600 border-green-200';
+            case 'ناموفق': return 'bg-red-50 text-red-600 border-red-200';
+            case 'در انتظار': return 'bg-orange-50 text-orange-600 border-orange-200';
+            default: return 'bg-gray-50 text-gray-600 border-gray-200';
         }
-        setStatusModal({ isOpen: false, classData: null });
     };
 
     return (
@@ -137,8 +136,6 @@ export default function ClassesPage() {
             <Sidebar />
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-
-
                 {/* Main */}
                 <main className="flex-1 p-8 overflow-y-auto max-sm:p-4 bg-[#F8F9FB]">
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
@@ -147,7 +144,7 @@ export default function ClassesPage() {
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                <h1 className="text-base font-bold text-gray-800">لیست کلاس‌ها</h1>
+                                <h1 className="text-base font-bold text-gray-800">لیست رزروها</h1>
                             </div>
                             <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
                                 <BsPerson size={24} />
@@ -168,14 +165,14 @@ export default function ClassesPage() {
                                         <LuFilter size={20} />
                                     </button>
                                     <div className="h-[44px] px-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center text-[13px] font-medium text-gray-600 shrink-0">
-                                        تعداد کل: ۳۵۰۰
+                                        تعداد کل: ۲۵۰
                                     </div>
                                 </div>
 
                                 <div className="relative w-full md:w-[320px]">
                                     <input
                                         type="text"
-                                        placeholder="جستجو"
+                                        placeholder="جستجوی نام کاربر..."
                                         className="w-full h-[44px] pr-10 pl-4 bg-white border border-gray-200 rounded-xl text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all font-medium"
                                     />
                                     <BsSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -191,11 +188,24 @@ export default function ClassesPage() {
                                             <LuX size={18} />
                                         </button>
                                     </div>
-                                    <div ref={filterRef} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                                        {renderDropdown('day', 'روز')}
+                                    <div ref={filterRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
                                         {renderDropdown('sport', 'رشته ورزشی')}
-                                        {renderDropdown('gender', 'جنسیت')}
                                         {renderDropdown('status', 'وضعیت')}
+                                        <div className="flex flex-col gap-2 col-span-1 lg:col-span-2">
+                                            <label className="text-[12px] font-semibold text-gray-600 pr-1 text-right">تاریخ (از - تا)</label>
+                                            <div
+                                                onClick={() => setIsDateModalOpen(true)}
+                                                className="flex items-center gap-3 w-full border border-gray-200 bg-white rounded-xl px-4 h-11 cursor-pointer hover:border-primary-400 transition-colors"
+                                            >
+                                                <span className={`text-[13px] ${dateRange.length > 0 ? 'text-gray-800 font-bold' : 'text-gray-400'}`}>
+                                                    {dateRange.length === 2
+                                                        ? `${dateRange[0]?.format('YYYY/MM/DD')} - ${dateRange[1]?.format('YYYY/MM/DD')}`
+                                                        : dateRange.length === 1
+                                                            ? `${dateRange[0]?.format('YYYY/MM/DD')}`
+                                                            : 'انتخاب بازه زمانی...'}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="mt-8 flex justify-end">
                                         <button className="w-[120px] h-11 bg-primary-500 text-white rounded-xl text-[13px] font-bold shadow-[0_4px_12px_rgba(124,77,255,0.25)] hover:bg-primary-600 transition-colors">
@@ -210,35 +220,26 @@ export default function ClassesPage() {
                                 <table className="w-full min-w-[800px] text-right">
                                     <thead>
                                         <tr className="bg-gray-50/50">
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%]">روز</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%] text-center">رشته ورزشی</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">جنسیت</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%] text-center">مبلغ (تومان)</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">زمان ورزش</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">تعداد رزرو</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[10%] text-left">وضعیت</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%]">نام کاربر</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">رشته ورزشی</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">تاریخ</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">ساعت</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">مبلغ پرداختی</th>
+                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%] text-center">وضعیت پرداخت</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {classes.map((cls, index) => (
-                                            <tr key={cls.id} className={`transition-colors hover:bg-gray-50/50 ${index !== classes.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600">{cls.day}</td>
-                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{cls.sport}</td>
-                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{cls.gender}</td>
-                                                <td className="py-5 px-6 text-[14px] font-bold text-gray-700 text-center">{cls.price}</td>
-                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center" dir="rtl">{cls.time}</td>
-                                                <td className="py-5 px-6 text-[14px] font-bold text-gray-700 text-center">{cls.reservations}</td>
-                                                <td className="py-5 px-6 text-left">
-                                                    {/* Toggle Switch */}
-                                                    <button
-                                                        onClick={() => handleToggleClick(cls)}
-                                                        className={`w-11 h-6 rounded-full relative transition-[background-color] duration-300 ml-1 shrink-0 ${cls.isActive ? 'bg-primary-600' : 'bg-gray-300'}`}
-                                                    >
-                                                        <div
-                                                            className={`w-[20px] h-[20px] rounded-full bg-white absolute top-[2px] shadow-sm transition-all duration-300 ease-in-out`}
-                                                            style={cls.isActive ? { left: '2px', transform: 'translateX(0)' } : { left: 'calc(100% - 22px)', transform: 'translateX(0)' }}
-                                                        ></div>
-                                                    </button>
+                                        {reservations.map((res, index) => (
+                                            <tr key={res.id} className={`transition-colors hover:bg-gray-50/50 ${index !== reservations.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                                                <td className="py-5 px-6 text-[13.5px] font-bold text-gray-800">{res.userName}</td>
+                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{res.sport}</td>
+                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{res.date}</td>
+                                                <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center" dir="rtl">{res.time}</td>
+                                                <td className="py-5 px-6 text-[14px] font-bold text-gray-700 text-center">{res.price} تومان</td>
+                                                <td className="py-5 px-6 flex justify-center text-center">
+                                                    <div className={`px-4 py-1.5 rounded-full border text-[12.5px] font-bold ${getStatusStyle(res.status)}`}>
+                                                        {res.status}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -252,7 +253,7 @@ export default function ClassesPage() {
                                     <button className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors">
                                         <BsChevronRight size={12} />
                                     </button>
-                                    {[1, 2, 3, '...', 13].map((pageNum, idx) => (
+                                    {[1, 2, 3, '...', 25].map((pageNum, idx) => (
                                         <button
                                             key={idx}
                                             className={`w-8 h-8 rounded-full text-[13px] font-bold transition-colors ${pageNum === 1 ? 'bg-primary-500 text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'}`}
@@ -280,14 +281,12 @@ export default function ClassesPage() {
                 </main>
             </div>
 
-            {/* Modals */}
-            <StatusToggleModal
-                isOpen={statusModal.isOpen}
-                onClose={() => setStatusModal({ isOpen: false, classData: null })}
-                onConfirm={handleConfirmStatus}
-                classData={statusModal.classData}
+            <DateRangeModal
+                isOpen={isDateModalOpen}
+                onClose={() => setIsDateModalOpen(false)}
+                initialDates={dateRange}
+                onConfirm={(dates) => setDateRange(dates)}
             />
-
         </div>
     );
 }

@@ -63,3 +63,55 @@
   font-family: var(--font-vazir) !important;
   direction: rtl !important;
 }
+
+/* Datepicker Overrides */
+:root {
+  --rmdp-primary-purple: var(--color-primary-500);
+  --rmdp-secondary-purple: var(--color-primary-200);
+  --rmdp-shadow-purple: transparent;
+  --rmdp-today-purple: var(--color-primary-400);
+  --rmdp-hover-purple: var(--color-primary-600);
+  --rmdp-deselect-purple: var(--color-primary-300);
+}
+
+.purple .rmdp-wrapper {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.purple .rmdp-day.rmdp-selected span:not(.highlight) {
+  box-shadow: none !important;
+}
+
+.purple .rmdp-arrow-container:hover {
+  box-shadow: none !important;
+}
+
+.purple .rmdp-range {
+  box-shadow: none !important;
+}
+
+.purple .rmdp-day.rmdp-today span {
+  background-color: var(--color-primary-500) !important;
+  color: white !important;
+}
+
+
+
+.purple .rmdp-week-day {
+  color: var(--color-primary-500) !important;
+}
+
+.purple .rmdp-range {
+  background-color: var(--color-primary-500) !important;
+}
+
+.rmdp-shadow {
+  box-shadow: none !important;
+  border: 1px solid #e0e0e0;
+}
+
+.purple span:hover {
+  background-color: var(--color-primary-500) !important;
+  color: white !important;
+}
