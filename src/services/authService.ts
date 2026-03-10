@@ -14,6 +14,14 @@ export interface VerifyAndLoginPayload {
     captchaKey?: string;
     captchaCode?: string;
 }
+
+export interface VerifyAndLoginResponse {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    hasProfile: boolean;
+}
+
 export interface GymOwnerData {
     createdMoment: string;
     modifiedMoment: string;
@@ -66,7 +74,7 @@ export const authService = {
         return response.data;
     },
 
-    async verifyAndLogin(phoneNumber: string, verificationCode: string): Promise<any> {
+    async verifyAndLogin(phoneNumber: string, verificationCode: string): Promise<VerifyAndLoginResponse> {
         const response = await api.post('/GymOwner/VerifyAndLoginWithVerificationCode', {
             phoneNumber,
             verificationCode,

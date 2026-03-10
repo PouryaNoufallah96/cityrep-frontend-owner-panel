@@ -81,7 +81,6 @@ export default function LoginPage() {
             { phoneNumber: formattedPhone, code },
             {
                 onSuccess: async (result) => {
-                    login(result.access_token, result.refresh_token);
                     gymOwnerDataMutation.mutate(undefined, {
                         onSuccess: (data) => {
                             localStorage.setItem('gymOwner', JSON.stringify(data));

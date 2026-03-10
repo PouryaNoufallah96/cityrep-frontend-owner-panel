@@ -38,7 +38,7 @@ export interface GymTrendInfoUpdate {
 export interface AddGymPayload {
     title: string;
     description?: string;
-    level?: string;
+    // level?: string;
     address?: AddressInfoUpdate;
     contact?: {
         phoneNumber?: string;
@@ -51,12 +51,96 @@ export interface AddGymPayload {
     }>;
     trends?: GymTrendInfoUpdate[];
     facilityIds?: string[];
+    supportedGender?: string[] //Male, Female
 }
 
 export interface GymTrend {
     gymTrendId: string;
     title: string;
     iconUrl: string;
+}
+
+export interface GymData {
+    gymId: string;
+    title: string;
+    description: string;
+    level: string;
+    slug: string;
+    supportedGender?: string[] //Male, Female
+
+    address?: {
+        geoLocation?: {
+            longitude: number;
+            latitude: number;
+        };
+        address?: string;
+    };
+    contact?: {
+        phoneNumber: string;
+    };
+    trends: Array<{
+        gymTrendId: string;
+        trendIconUrl: string;
+        title: string;
+        isActive: boolean;
+    }>;
+    gymTotalWorkingHour: Array<{
+        dayOfWeek: string;
+        isClosed: boolean;
+    }>;
+    images: any[];
+    facilities: any[];
+    state: string;
+    weekPrices: any[];
+    rate: number;
+    createdMoment: string;
+}
+
+export interface GetAllGymsResponse {
+    data: {
+        data: GymData[];
+        pageCount: number;
+        totalCount: number;
+    };
+    isSuccess: boolean;
+    statusCode: number;
+    message: string;
+}
+
+export interface GetAllGymsPayload {
+    pagination?: {
+        page: number;
+        size: number;
+    };
+    genders?: string[];
+    gymLevels?: string[];
+    gymTrendIds?: string[];
+    facilityIds?: string[];
+    search?: string;
+}
+
+export interface EditGymCommonDataPayload {
+    gymId: string;
+    title: string;
+    phoneNumber: string;
+    genders: string[];
+    addressText: string;
+}
+
+export interface EditGymGeoLocationPayload {
+    gymId: string;
+    geoLocation: {
+        longitude: number;
+        latitude: number;
+    };
+}
+
+export interface EditGymImagesPayload {
+    gymId: string;
+    images: Array<{
+        imageUrl: string;
+        order: number;
+    }>;
 }
 
 export const gymService = {
@@ -70,8 +154,23 @@ export const gymService = {
         return response.data;
     },
 
-    async getAllGyms(filter?: any) {
-        const response = await api.post('/Gym/GetAllGyms', filter || { pagination: { page: 1, pageSize: 10 } });
+    async editGymCommonData(data: EditGymCommonDataPayload) {
+        const response = await api.post('/Gym/EditGymCommonData', data);
+        return response.data;
+    },
+
+    async editGymGeoLocation(data: EditGymGeoLocationPayload) {
+        const response = await api.post('/Gym/EditGymGeoLocationSync', data);
+        return response.data;
+    },
+
+    async editGymImages(data: EditGymImagesPayload) {
+        const response = await api.post('/Gym/EditGymImages', data);
+        return response.data;
+    },
+
+    async getAllGyms(filter?: GetAllGymsPayload): Promise<GetAllGymsResponse> {
+        const response = await api.post('/Gym/GetAllGyms', filter || { pagination: { page: 1, size: 10 } });
         return response.data;
     },
 

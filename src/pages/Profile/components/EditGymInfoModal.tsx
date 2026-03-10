@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import { LuX, LuChevronDown } from 'react-icons/lu';
+import { toast } from 'react-toastify';
+import { useEditGymCommonData } from '../../../hooks/useGym';
 
 interface EditGymInfoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    gymId: string;
     initialData: {
         name: string;
         phone: string;
-        gender: string;
+        supportedGender: string[];
         address: string;
     };
     onSave: (data: any) => void;
 }
 
-export default function EditGymInfoModal({ isOpen, onClose, initialData, onSave }: EditGymInfoModalProps) {
+export default function EditGymInfoModal({ isOpen, onClose, gymId, initialData, onSave }: EditGymInfoModalProps) {
     const [formData, setFormData] = useState(initialData);
+    const editMutation = useEditGymCommonData();
 
     useEffect(() => {
         setFormData(initialData);
@@ -28,6 +32,28 @@ export default function EditGymInfoModal({ isOpen, onClose, initialData, onSave 
 
     const handleChange = (field: keyof typeof formData, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSave = () => {
+        editMutation.mutate(
+            {
+                gymId,
+                title: formData.name,
+                phoneNumber: formData.phone,
+                genders: formData.supportedGender,
+                addressText: formData.address,
+            },
+            {
+                onSuccess: () => {
+                    onSave(formData);
+                    toast.success('اطلاعات باشگاه با موفقیت ویرایش شد');
+                    onClose();
+                },
+                onError: (error: any) => {
+                    toast.error(error.response?.data?.message || 'خطا در ویرایش اطلاعات');
+                },
+            }
+        );
     };
 
     return (
@@ -81,14 +107,33 @@ export default function EditGymInfoModal({ isOpen, onClose, initialData, onSave 
                         </div>
                     </div>
 
-                    {/* Gender Dropdown Mock */}
+                    {/* Gender Dropdown */}
                     <div className="flex flex-col gap-1.5">
                         <label className="text-[13px] font-bold text-gray-700">جنسیت</label>
-                        <div className="relative flex items-center cursor-pointer">
-                            <div className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-between text-[14px] text-gray-800">
-                                <span>{formData.gender}</span>
-                                <LuChevronDown size={18} className="text-gray-400" />
-                            </div>
+                        <div className="relative flex items-center">
+                            <select
+                                className="w-full h-12 px-4 rounded-xl border border-gray-200 outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-100 transition-all text-[14px] text-gray-800 appearance-none bg-white cursor-pointer"
+                                value={
+                                    formData.supportedGender?.includes('Male') && formData.supportedGender?.includes('Female')
+                                        ? 'Both'
+                                        : formData.supportedGender?.includes('Male')
+                                            ? 'Male'
+                                            : formData.supportedGender?.includes('Female')
+                                                ? 'Female'
+                                                : ''
+                                }
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const genders = val === 'Both' ? ['Male', 'Female'] : val ? [val] : [];
+                                    setFormData(prev => ({ ...prev, supportedGender: genders }));
+                                }}
+                            >
+                                <option value="">انتخاب کنید</option>
+                                <option value="Male">مردانه</option>
+                                <option value="Female">زنانه</option>
+                                <option value="Both">هر دو</option>
+                            </select>
+                            <LuChevronDown size={18} className="absolute left-3 text-gray-400 pointer-events-none" />
                         </div>
                     </div>
 
@@ -114,13 +159,11 @@ export default function EditGymInfoModal({ isOpen, onClose, initialData, onSave 
                 {/* Footer Buttons */}
                 <div className="flex gap-4 mt-8">
                     <button
-                        onClick={() => {
-                            onSave(formData);
-                            onClose();
-                        }}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors"
+                        onClick={handleSave}
+                        disabled={editMutation.isPending}
+                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
-                        ثبت تغییرات
+                        {editMutation.isPending ? 'در حال ذخیره...' : 'ثبت تغییرات'}
                     </button>
                     <button
                         onClick={onClose}

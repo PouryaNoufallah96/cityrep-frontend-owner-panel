@@ -1,42 +1,80 @@
 import { useState, useEffect } from 'react';
-import { BsPerson } from 'react-icons/bs';
+
 import { LuPen, LuBuilding2, LuPhone, LuMapPin, LuUser, LuPlus } from 'react-icons/lu';
 import Sidebar from '../../components/layout/Sidebar';
+import PageHeader from '../../components/layout/PageHeader';
 import NeshanMap from '../../components/NeshanMap';
 import EditGymInfoModal from './components/EditGymInfoModal';
 import EditLocationModal from './components/EditLocationModal';
 import EditImagesModal from './components/EditImagesModal';
 
-import { useGymTrends } from '../../hooks/useGym';
+import { useGyms } from '../../hooks/useGym';
+import { fileService } from '../../services/fileService';
 
 export default function ProfilePage() {
-    const { data: apiResponse } = useGymTrends();
-    const apiTrends = Array.isArray(apiResponse) ? apiResponse : (apiResponse?.data || []);
-    const [sportsStatus, setSportsStatus] = useState<{ id: string | number, name: string, isActive: boolean }[]>(apiTrends.map((t: any) => ({ id: t.gymTrendId, name: t.title, isActive: true })));
+    const { data: gymsResponse } = useGyms();
+    const gym = gymsResponse?.data?.data?.[0];
+
+    const [sportsStatus, setSportsStatus] = useState<{ id: string | number, name: string, isActive: boolean }[]>([]);
 
     useEffect(() => {
-        if (!sportsStatus.length && apiTrends?.length) {
-            setSportsStatus(apiTrends.map((t: any) => ({ id: t.gymTrendId, name: t.title, isActive: true })));
+        if (gym?.trends?.length && !sportsStatus.length) {
+            setSportsStatus(gym.trends.map((t) => ({ id: t.gymTrendId, name: t.title, isActive: t.isActive })));
         }
-    }, [apiTrends]);
+    }, [gym]);
+
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
 
-    const [gymImages, setGymImages] = useState([
-        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=400&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=400&auto=format&fit=crop'
-    ]);
+    const [gymImages, setGymImages] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (gym?.images?.length && !gymImages.length) {
+            setGymImages(gym.images.map((img: any) => fileService.getFileUrl(img.imageUrl || img)));
+        }
+    }, [gym]);
 
     const [gymLocation, setGymLocation] = useState({ lat: 35.6892, lng: 51.389 });
 
-    const [gymInfo, setGymInfo] = useState({
-        name: 'باشگاه اکسیژن',
-        phone: '09123456789',
-        gender: 'مردانه',
-        address: 'شریعتی، بعد از قبا، میناب پنجم، بالاتر از مجتمع تجاری، پلاک ۲'
+    useEffect(() => {
+        if (gym?.address?.geoLocation) {
+            setGymLocation({
+                lat: gym.address.geoLocation.latitude,
+                lng: gym.address.geoLocation.longitude,
+            });
+        }
+    }, [gym]);
+
+    const [gymInfo, setGymInfo] = useState<{
+        name: string;
+        phone: string;
+        supportedGender: string[];
+        address: string;
+    }>({
+        name: '',
+        phone: '',
+        supportedGender: [],
+        address: ''
     });
+
+    useEffect(() => {
+        if (gym && !gymInfo.name) {
+            setGymInfo({
+                name: gym.title || '',
+                phone: gym.contact?.phoneNumber || '',
+                supportedGender: gym.supportedGender || [],
+                address: gym.address?.address || '',
+            });
+        }
+    }, [gym]);
+
+    const getGenderLabel = (genders: string[]) => {
+        if (genders.includes('Male') && genders.includes('Female')) return 'آقایان و بانوان';
+        if (genders.includes('Male')) return 'آقایان';
+        if (genders.includes('Female')) return 'بانوان';
+        return '—';
+    };
 
     const toggleSport = (id: string | number) => {
         setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
@@ -51,15 +89,7 @@ export default function ProfilePage() {
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
 
                         {/* Top Header Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                <h1 className="text-base font-bold text-gray-800">حساب کاربری</h1>
-                            </div>
-                            <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
-                                <BsPerson size={24} />
-                            </div>
-                        </div>
+                        <PageHeader title="حساب کاربری" />
 
                         {/* Middle Cards (Location & Images) */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -115,7 +145,7 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Gym Info Bar */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between w-full gap-4 flex-wrap">
                             <div className="flex items-center gap-8 flex-wrap flex-1">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
@@ -127,7 +157,7 @@ export default function ProfilePage() {
                                     <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
                                         <LuUser size={22} />
                                     </div>
-                                    <span className="text-[14px] font-medium text-gray-700">مخصوص {gymInfo.gender === 'مردانه' ? 'آقایان' : (gymInfo.gender === 'زنانه' ? 'بانوان' : gymInfo.gender)}</span>
+                                    <span className="text-[14px] font-medium text-gray-700">مخصوص {getGenderLabel(gymInfo.supportedGender)}</span>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
@@ -184,18 +214,21 @@ export default function ProfilePage() {
                 isOpen={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
                 initialData={gymInfo}
+                gymId={gym?.gymId || ''}
                 onSave={setGymInfo}
             />
             <EditLocationModal
                 isOpen={isLocationModalOpen}
                 onClose={() => setIsLocationModalOpen(false)}
                 initialLocation={gymLocation}
+                gymId={gym?.gymId || ''}
                 onSave={(loc) => setGymLocation(loc)}
             />
             <EditImagesModal
                 isOpen={isImagesModalOpen}
                 onClose={() => setIsImagesModalOpen(false)}
                 images={gymImages}
+                gymId={gym?.gymId || ''}
                 onSave={setGymImages}
             />
         </div>

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { BsPerson, BsSearch, BsChevronDown, BsChevronLeft, BsChevronRight, BsCheck } from 'react-icons/bs';
+import { BsSearch, BsChevronDown, BsChevronLeft, BsChevronRight, BsCheck } from 'react-icons/bs';
 import { LuFilter, LuX } from 'react-icons/lu';
 import Sidebar from '../../components/layout/Sidebar';
+import PageHeader from '../../components/layout/PageHeader';
 import StatusToggleModal, { type ClassItemData } from './components/StatusToggleModal';
 import { useGymTrends } from '../../hooks/useGym';
 
@@ -144,15 +145,7 @@ export default function ClassesPage() {
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
 
                         {/* Top Header Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                <h1 className="text-base font-bold text-gray-800">لیست کلاس‌ها</h1>
-                            </div>
-                            <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
-                                <BsPerson size={24} />
-                            </div>
-                        </div>
+                        <PageHeader title="لیست کلاس‌ها" />
 
                         {/* Content Card */}
                         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[calc(100vh-220px)] flex flex-col relative">

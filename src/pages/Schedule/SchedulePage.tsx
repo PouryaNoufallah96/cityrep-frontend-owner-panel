@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { BsPerson } from 'react-icons/bs';
+
 import { HiOutlinePlus } from 'react-icons/hi';
 import Sidebar from '../../components/layout/Sidebar';
+import PageHeader from '../../components/layout/PageHeader';
 import { scheduleService } from '../../services/scheduleService';
 import ConfirmModal from '../../components/ui/ConfirmModal';
 import { toast } from 'react-toastify';
@@ -254,20 +255,7 @@ export default function SchedulePage() {
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
 
                         {/* Top Header Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                <h1 className="text-base font-bold text-gray-800">مدیریت زمان‌بندی</h1>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-600 font-medium">
-                                    {gymOwner?.fullName}
-                                </span>
-                                <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
-                                    <BsPerson size={24} />
-                                </div>
-                            </div>
-                        </div>
+                        <PageHeader title="مدیریت زمان‌بندی" subtitle={gymOwner?.fullName} />
 
                         {/* Content Card */}
                         <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 p-8 min-h-[calc(100vh-220px)] flex flex-col">

@@ -3,19 +3,22 @@ import { LuX, LuPlus, LuTrash2, LuLoader } from 'react-icons/lu';
 import { toast } from 'react-toastify';
 import ConfirmModal from '../../../components/ui/ConfirmModal';
 import { fileService } from '../../../services/fileService';
+import { useEditGymImages } from '../../../hooks/useGym';
 
 interface EditImagesModalProps {
     isOpen: boolean;
     onClose: () => void;
+    gymId: string;
     images: string[];
     onSave: (images: string[]) => void;
 }
 
-export default function EditImagesModal({ isOpen, onClose, images: initialImages, onSave }: EditImagesModalProps) {
+export default function EditImagesModal({ isOpen, onClose, gymId, images: initialImages, onSave }: EditImagesModalProps) {
     const [images, setImages] = useState<string[]>([]);
     const [imageToDelete, setImageToDelete] = useState<number | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const editMutation = useEditGymImages();
 
     useEffect(() => {
         if (isOpen) {
@@ -57,6 +60,33 @@ export default function EditImagesModal({ isOpen, onClose, images: initialImages
                 fileInputRef.current.value = '';
             }
         }
+    };
+
+    // Extract filename from full URL for API payload
+    const extractFileName = (url: string) => {
+        const parts = url.split('/DownloadFile/');
+        return parts.length > 1 ? parts[1] : url;
+    };
+
+    const handleSave = () => {
+        const payload = {
+            gymId,
+            images: images.map((img, index) => ({
+                imageUrl: extractFileName(img),
+                order: index,
+            })),
+        };
+
+        editMutation.mutate(payload, {
+            onSuccess: () => {
+                onSave(images);
+                toast.success('تصاویر باشگاه با موفقیت ویرایش شد');
+                onClose();
+            },
+            onError: (error: any) => {
+                toast.error(error.response?.data?.message || 'خطا در ویرایش تصاویر');
+            },
+        });
     };
 
     return (
@@ -125,13 +155,11 @@ export default function EditImagesModal({ isOpen, onClose, images: initialImages
                 {/* Footer Buttons */}
                 <div className="flex gap-4 mt-8">
                     <button
-                        onClick={() => {
-                            onSave(images);
-                            onClose();
-                        }}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors"
+                        onClick={handleSave}
+                        disabled={editMutation.isPending}
+                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
-                        ثبت تغییرات
+                        {editMutation.isPending ? 'در حال ذخیره...' : 'ثبت تغییرات'}
                     </button>
                     <button
                         onClick={onClose}

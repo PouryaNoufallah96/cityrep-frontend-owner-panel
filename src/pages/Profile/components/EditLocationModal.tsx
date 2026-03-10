@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { LuX } from 'react-icons/lu';
+import { toast } from 'react-toastify';
 import NeshanMap from '../../../components/NeshanMap';
+import { useEditGymGeoLocation } from '../../../hooks/useGym';
 
 interface EditLocationModalProps {
     isOpen: boolean;
     onClose: () => void;
+    gymId: string;
     initialLocation?: { lat: number; lng: number };
     onSave: (location: { lat: number; lng: number }) => void;
 }
 
-export default function EditLocationModal({ isOpen, onClose, initialLocation, onSave }: EditLocationModalProps) {
+export default function EditLocationModal({ isOpen, onClose, gymId, initialLocation, onSave }: EditLocationModalProps) {
     const [location, setLocation] = useState({ lat: 35.6892, lng: 51.389 });
+    const editMutation = useEditGymGeoLocation();
 
     useEffect(() => {
         if (isOpen && initialLocation) {
@@ -19,6 +23,28 @@ export default function EditLocationModal({ isOpen, onClose, initialLocation, on
     }, [isOpen, initialLocation]);
 
     if (!isOpen) return null;
+
+    const handleSave = () => {
+        editMutation.mutate(
+            {
+                gymId,
+                geoLocation: {
+                    latitude: location.lat,
+                    longitude: location.lng,
+                },
+            },
+            {
+                onSuccess: () => {
+                    onSave(location);
+                    toast.success('موقعیت مکانی با موفقیت ویرایش شد');
+                    onClose();
+                },
+                onError: (error: any) => {
+                    toast.error(error.response?.data?.message || 'خطا در ویرایش موقعیت مکانی');
+                },
+            }
+        );
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" dir="rtl">
@@ -49,13 +75,11 @@ export default function EditLocationModal({ isOpen, onClose, initialLocation, on
                 {/* Footer Buttons */}
                 <div className="flex gap-4 mt-8">
                     <button
-                        onClick={() => {
-                            onSave(location);
-                            onClose();
-                        }}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors"
+                        onClick={handleSave}
+                        disabled={editMutation.isPending}
+                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors disabled:opacity-50"
                     >
-                        ثبت تغییرات
+                        {editMutation.isPending ? 'در حال ذخیره...' : 'ثبت تغییرات'}
                     </button>
                     <button
                         onClick={onClose}

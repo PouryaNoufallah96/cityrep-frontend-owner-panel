@@ -7,13 +7,15 @@ import {
     HiOutlinePhotograph,
     HiOutlineLocationMarker,
 } from 'react-icons/hi';
-import { BsGrid, BsPerson } from 'react-icons/bs';
+import { BsGrid } from 'react-icons/bs';
 import { IoDocumentTextOutline } from 'react-icons/io5';
 
 import { useAddGym, useGymTrends } from '../../hooks/useGym';
+import { useAuth } from '../../context/AuthContext';
 import { fileService } from '../../services/fileService';
 import type { AddGymPayload } from '../../services/gymService';
 import Sidebar from '../../components/layout/Sidebar';
+import PageHeader from '../../components/layout/PageHeader';
 
 // Child components & Types
 import type { GymFormData } from './types';
@@ -46,6 +48,7 @@ const SPORT_TRENDS_FALLBACK = [
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const { recheckGyms } = useAuth();
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<GymFormData>({
         title: '',
@@ -149,10 +152,14 @@ export default function RegisterPage() {
                 },
                 trends: formData.selectedTrends.map((id) => ({ gymTrendId: id })),
                 images: uploadedImages,
+                supportedGender: formData.supportedGender === 'Both'
+                    ? ['Male', 'Female']
+                    : formData.supportedGender ? [formData.supportedGender] : [],
             };
 
             addGymMutation.mutate(payload, {
-                onSuccess: () => {
+                onSuccess: async () => {
+                    await recheckGyms();
                     toast.success('باشگاه با موفقیت ثبت شد');
                     navigate('/dashboard');
                 },
@@ -194,15 +201,7 @@ export default function RegisterPage() {
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6 items-center">
 
                         {/* Top Header Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
-                                <div className="w-2 h-2 rounded-full bg-primary-500" />
-                                <h1 className="text-base font-bold text-gray-800">حساب کاربری</h1>
-                            </div>
-                            <div className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400">
-                                <BsPerson size={24} />
-                            </div>
-                        </div>
+                        <PageHeader title="حساب کاربری" />
 
                         {/* Content Card */}
                         <div className="w-full max-w-[650px] bg-white rounded-2xl p-10 shadow-sm animate-[fadeIn_0.4s_ease-out] max-sm:p-6 mb-auto border border-gray-100 min-h-[calc(100vh-220px)]">

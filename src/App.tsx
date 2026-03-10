@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute, GuestRoute } from './components/RouteGuards';
+import { GuestRoute, GymOwnerRoute, RegisterRoute } from './components/RouteGuards';
 import LoginPage from './pages/Login/LoginPage';
 import RegisterPage from './pages/Register/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
@@ -37,53 +37,55 @@ function App() {
               }
             />
 
-            {/* Protected routes (redirect to login if not authenticated) */}
+            {/* Register route (only accessible if authenticated but has NO gym) */}
             <Route
               path="/register"
               element={
-                <ProtectedRoute>
+                <RegisterRoute>
                   <RegisterPage />
-                </ProtectedRoute>
+                </RegisterRoute>
               }
             />
+
+            {/* Gym owner routes (require authentication AND at least one gym) */}
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <GymOwnerRoute>
                   <DashboardPage />
-                </ProtectedRoute>
+                </GymOwnerRoute>
               }
             />
             <Route
               path="/profile"
               element={
-                <ProtectedRoute>
+                <GymOwnerRoute>
                   <ProfilePage />
-                </ProtectedRoute>
+                </GymOwnerRoute>
               }
             />
             <Route
               path="/schedule"
               element={
-                <ProtectedRoute>
+                <GymOwnerRoute>
                   <SchedulePage />
-                </ProtectedRoute>
+                </GymOwnerRoute>
               }
             />
             <Route
               path="/classes"
               element={
-                <ProtectedRoute>
+                <GymOwnerRoute>
                   <ClassesPage />
-                </ProtectedRoute>
+                </GymOwnerRoute>
               }
             />
             <Route
               path="/reservations"
               element={
-                <ProtectedRoute>
+                <GymOwnerRoute>
                   <ReservationsPage />
-                </ProtectedRoute>
+                </GymOwnerRoute>
               }
             />
 
