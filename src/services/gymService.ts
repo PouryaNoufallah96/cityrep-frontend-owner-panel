@@ -143,6 +143,11 @@ export interface EditGymImagesPayload {
     }>;
 }
 
+export interface ToggleGymActivityTrendPayload {
+    gymId: string;
+    gymTrendId: string;
+}
+
 export const gymService = {
     async addGym(data: AddGymPayload) {
         const response = await api.post('/Gym/AddGym', data);
@@ -176,6 +181,11 @@ export const gymService = {
 
     async getAllTrends() {
         const response = await api.post('/GymTrend/GetAllForGymOwner');
+        return response.data;
+    },
+
+    async toggleGymActivityTrend(data: ToggleGymActivityTrendPayload) {
+        const response = await api.post('/Gym/ToggleGymActivityTrend', data);
         return response.data;
     },
 };

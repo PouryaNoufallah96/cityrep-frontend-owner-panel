@@ -29,6 +29,8 @@ export default function SessionCard({
         return Number(val).toLocaleString('fa-IR');
     };
 
+    const isBackend = !!session.id;
+
     return (
         <div className="bg-white border-[1.5px] border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.02)] rounded-[14px] p-5 flex flex-col gap-3 relative">
             {/* Card Header */}
@@ -48,8 +50,8 @@ export default function SessionCard({
             {/* From Time Input */}
             <div className="relative">
                 <div
-                    onClick={() => setActivePicker(`${session._clientId}-from`)}
-                    className={`flex items-center w-full px-3.5 py-3 border-[1.5px] rounded-[10px] cursor-pointer transition-colors bg-white hover:border-gray-300 ${activePicker === `${session._clientId}-from` ? 'border-primary-400 ring-2 ring-primary-50' : 'border-gray-100'}`}
+                    onClick={() => !isBackend && setActivePicker(`${session._clientId}-from`)}
+                    className={`flex items-center w-full px-3.5 py-3 border-[1.5px] rounded-[10px] transition-colors ${isBackend ? 'bg-gray-50 cursor-default opacity-80' : 'bg-white cursor-pointer hover:border-gray-300'} ${activePicker === `${session._clientId}-from` ? 'border-primary-400 ring-2 ring-primary-50' : 'border-gray-100'}`}
                 >
                     <input
                         type="text"
@@ -60,7 +62,7 @@ export default function SessionCard({
                         dir="ltr"
                     />
                     <div className="flex items-center gap-2 pr-2 shrink-0 border-r border-gray-100">
-                        {session.fromTime && (
+                        {session.fromTime && !isBackend && (
                             <HiOutlineX
                                 size={16}
                                 className="text-gray-400 hover:text-red-500 pointer-events-auto cursor-pointer"
@@ -79,8 +81,8 @@ export default function SessionCard({
             {/* To Time Input */}
             <div className="relative">
                 <div
-                    onClick={() => setActivePicker(`${session._clientId}-to`)}
-                    className={`flex items-center w-full px-3.5 py-3 border-[1.5px] rounded-[10px] cursor-pointer transition-colors bg-white hover:border-gray-300 ${activePicker === `${session._clientId}-to` ? 'border-primary-400 ring-2 ring-primary-50' : 'border-gray-100'}`}
+                    onClick={() => !isBackend && setActivePicker(`${session._clientId}-to`)}
+                    className={`flex items-center w-full px-3.5 py-3 border-[1.5px] rounded-[10px] transition-colors ${isBackend ? 'bg-gray-50 cursor-default opacity-80' : 'bg-white cursor-pointer hover:border-gray-300'} ${activePicker === `${session._clientId}-to` ? 'border-primary-400 ring-2 ring-primary-50' : 'border-gray-100'}`}
                 >
                     <input
                         type="text"
@@ -91,7 +93,7 @@ export default function SessionCard({
                         dir="ltr"
                     />
                     <div className="flex items-center gap-2 pr-2 shrink-0 border-r border-gray-100">
-                        {session.toTime && (
+                        {session.toTime && !isBackend && (
                             <HiOutlineX
                                 size={16}
                                 className="text-gray-400 hover:text-red-500 pointer-events-auto cursor-pointer"
@@ -107,18 +109,46 @@ export default function SessionCard({
                 )}
             </div>
 
+            {/* Gender Selection */}
+            <div className={`flex bg-gray-50 border-[1.5px] border-gray-100 p-1 rounded-[10px] w-full mt-1 mb-1 ${isBackend ? 'opacity-80' : ''}`}>
+                <button
+                    disabled={isBackend}
+                    onClick={() => updateSession(session._clientId, { gender: 'men' })}
+                    className={`flex-1 py-1.5 text-[12px] font-bold rounded-[7px] transition-all ${session.gender === 'men' ? 'bg-white text-gray-800 shadow-sm border border-gray-100/50' : 'text-gray-400 hover:text-gray-600'} ${isBackend ? 'cursor-default' : ''}`}
+                >
+                    مردانه
+                </button>
+                <div className="w-[1px] bg-gray-200/60 my-2 mx-0.5"></div>
+                <button
+                    disabled={isBackend}
+                    onClick={() => updateSession(session._clientId, { gender: 'both' })}
+                    className={`flex-1 py-1.5 text-[12px] font-bold rounded-[7px] transition-all ${session.gender === 'both' ? 'bg-white text-gray-800 shadow-sm border border-gray-100/50' : 'text-gray-400 hover:text-gray-600'} ${isBackend ? 'cursor-default' : ''}`}
+                >
+                    هردو
+                </button>
+                <div className="w-[1px] bg-gray-200/60 my-2 mx-0.5"></div>
+                <button
+                    disabled={isBackend}
+                    onClick={() => updateSession(session._clientId, { gender: 'women' })}
+                    className={`flex-1 py-1.5 text-[12px] font-bold rounded-[7px] transition-all ${session.gender === 'women' ? 'bg-white text-gray-800 shadow-sm border border-gray-100/50' : 'text-gray-400 hover:text-gray-600'} ${isBackend ? 'cursor-default' : ''}`}
+                >
+                    زنانه
+                </button>
+            </div>
+
             {/* Capacity */}
-            <div className="flex items-center w-full px-3.5 py-[9px] border-[1.5px] border-gray-100 rounded-[10px] bg-white transition-colors focus-within:border-primary-400">
+            <div className={`flex items-center w-full px-3.5 py-[9px] border-[1.5px] border-gray-100 rounded-[10px] transition-colors focus-within:border-primary-400 ${isBackend ? 'bg-gray-50 opacity-80' : 'bg-white'}`}>
                 <input
                     type="number"
+                    disabled={isBackend}
                     value={session.capacity}
                     onChange={(e) => updateSession(session._clientId, { capacity: e.target.value })}
-                    className="w-full min-w-0 bg-transparent outline-none text-right text-[13px] font-bold text-gray-800"
+                    className={`w-full min-w-0 bg-transparent outline-none text-right text-[13px] font-bold text-gray-800 ${isBackend ? 'cursor-default' : ''}`}
                     dir="ltr"
                 />
                 <div className="flex items-center shrink-0 pr-2.5">
                     <span className="text-[12px] text-gray-400 font-medium ml-2">نفر</span>
-                    {session.capacity !== '' && (
+                    {session.capacity !== '' && !isBackend && (
                         <HiOutlineX
                             size={15}
                             className="text-gray-300 hover:text-red-500 cursor-pointer"
@@ -130,11 +160,11 @@ export default function SessionCard({
 
             {/* Price */}
             <div className="flex flex-col gap-1.5 pt-1">
-                <div className={`flex items-center w-full px-3.5 py-[9px] border-[1.5px] rounded-[10px] bg-white transition-colors focus-within:border-primary-400
-                    ${session.price && (Number(session.price) < 500000 || Number(session.price) > 2000000) ? 'border-red-500 focus-within:border-red-500' : 'border-gray-100'}`}
+                <div className={`flex items-center w-full px-3.5 py-[9px] border-[1.5px] rounded-[10px] transition-colors focus-within:border-primary-400 border-gray-100 ${isBackend ? 'bg-gray-50 opacity-80' : 'bg-white'}`}
                 >
                     <input
                         type="text"
+                        disabled={isBackend}
                         value={formatPriceDisplay(session.price)}
                         onChange={(e) => {
                             const val = e.target.value;
@@ -144,12 +174,12 @@ export default function SessionCard({
                                 .replace(/\D/g, '');
                             updateSession(session._clientId, { price: englishFormatted });
                         }}
-                        className="w-full min-w-0 bg-transparent outline-none text-right text-[13px] font-bold text-gray-800"
+                        className={`w-full min-w-0 bg-transparent outline-none text-right text-[13px] font-bold text-gray-800 ${isBackend ? 'cursor-default' : ''}`}
                         dir="ltr"
                     />
                     <div className="flex items-center shrink-0 pr-2.5">
                         <span className="text-[11px] text-gray-400 font-medium ml-2">تومان</span>
-                        {session.price !== '' && (
+                        {session.price !== '' && !isBackend && (
                             <HiOutlineX
                                 size={15}
                                 className="text-gray-300 hover:text-red-500 cursor-pointer"
@@ -158,31 +188,33 @@ export default function SessionCard({
                         )}
                     </div>
                 </div>
-                {session.price && (Number(session.price) < 500000 || Number(session.price) > 2000000) && (
+                {/* {session.price && (Number(session.price) < 500000 || Number(session.price) > 2000000) && (
                     <span className="text-[10px] text-red-500 font-medium text-right pr-1">بازه قیمتی این رشته ۵۰۰,۰۰۰ تا ۲,۰۰۰,۰۰۰ تومان</span>
-                )}
+                )} */}
             </div>
 
             {/* Apply to All Days Checkbox */}
-            <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer w-fit group">
-                    <div className={`w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center transition-colors 
+            {!isBackend && (
+                <div className="pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer w-fit group">
+                        <div className={`w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center transition-colors 
                     ${session.applyAllDays ? 'bg-primary-500 border-primary-500' : 'bg-transparent border-gray-300 group-hover:border-gray-400'}`}>
-                        {session.applyAllDays && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                        )}
-                    </div>
-                    <input
-                        type="checkbox"
-                        checked={session.applyAllDays || false}
-                        onChange={(e) => toggleAllDays(session._clientId, e.target.checked)}
-                        className="hidden"
-                    />
-                    <span className="text-[10px] font-medium text-gray-400 select-none">تنظیم برای تمام روزهای هفته</span>
-                </label>
-            </div>
+                            {session.applyAllDays && (
+                                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={session.applyAllDays || false}
+                            onChange={(e) => toggleAllDays(session._clientId, e.target.checked)}
+                            className="hidden"
+                        />
+                        <span className="text-[10px] font-medium text-gray-400 select-none">تنظیم برای تمام روزهای هفته</span>
+                    </label>
+                </div>
+            )}
         </div>
     );
 }

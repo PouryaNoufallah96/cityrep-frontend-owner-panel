@@ -6,6 +6,7 @@ import {
     type EditGymCommonDataPayload,
     type EditGymGeoLocationPayload,
     type EditGymImagesPayload,
+    type ToggleGymActivityTrendPayload,
 } from '../services/gymService';
 
 export function useGymTrends() {
@@ -53,6 +54,16 @@ export function useEditGymImages() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: EditGymImagesPayload) => gymService.editGymImages(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['gyms'] });
+        },
+    });
+}
+
+export function useToggleGymActivityTrend() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: ToggleGymActivityTrendPayload) => gymService.toggleGymActivityTrend(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['gyms'] });
         },
