@@ -65,7 +65,8 @@ export default function RadialTimePicker({ value, onChange }: RadialTimePickerPr
             if (h === 24) h = 0;
             updateTime(h, minute);
         } else {
-            let m = Math.round(angle / 6) % 60;
+            let m = Math.round((angle % 360) / 6);
+            if (m === 60) m = 0;
             updateTime(hour, m);
         }
     };

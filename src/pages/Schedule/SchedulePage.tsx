@@ -12,22 +12,28 @@ import type { LocalSession } from './types';
 import TrendTabs from './components/TrendTabs';
 import SessionCard from './components/SessionCard';
 import SaveOptionsModal from './components/SaveOptionsModal';
-import { useGymTrends } from '../../hooks/useGym';
+import { useGyms } from '../../hooks/useGym';
 
 export default function SchedulePage() {
     const { gymOwner } = useAuth();
 
-    const { data: apiResponse } = useGymTrends();
-    const apiTrends = Array.isArray(apiResponse) ? apiResponse : (apiResponse?.data || []);
-    const trends = apiTrends.map((t: any) => ({
-        id: t.gymTrendId,
-        title: t.title,
-        iconUrl: t.iconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.iconUrl}` : '🏋️'
-    })) || [];
+    const { data: gymsResponse, isLoading: isGymsLoading } = useGyms();
+    const gym = gymsResponse?.data?.data?.[0];
+    const gymId = gym?.gymId || '';
+
+    // Only map active trends from the gym object
+    const trends = gym?.trends
+        ?.filter((t: any) => t.isActive)
+        .map((t: any) => ({
+            id: t.gymTrendId,
+            title: t.title,
+            iconUrl: t.trendIconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.trendIconUrl}` : '🏋️'
+        })) || [];
 
     const [selectedTrend, setSelectedTrend] = useState('');
     const [localSessions, setLocalSessions] = useState<LocalSession[]>([]);
     const [loadedTrends, setLoadedTrends] = useState<Set<string>>(new Set());
+    const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
     const [activePicker, setActivePicker] = useState<string | null>(null);
     const pickerRef = useRef<HTMLDivElement>(null);
@@ -46,33 +52,54 @@ export default function SchedulePage() {
     }, [trends, selectedTrend]);
 
     useEffect(() => {
-        if (selectedTrend && !loadedTrends.has(selectedTrend)) {
+        if (selectedTrend && !loadedTrends.has(selectedTrend) && gymId) {
             loadSessions(selectedTrend);
         }
-    }, [selectedTrend, loadedTrends]);
+    }, [selectedTrend, loadedTrends, gymId]);
 
     const loadSessions = async (trendToLoad: string) => {
+        if (!gymId) return;
+        setIsLoadingSessions(true);
         setLoadedTrends(prev => new Set(prev).add(trendToLoad));
         try {
-            const data = await scheduleService.getSessions(trendToLoad);
-            const local = data.map(s => ({
+            const data = await scheduleService.getSessions(gymId, [trendToLoad]);
+
+            const mergedMap = new Map();
+            data.forEach(s => {
+                const key = `${s.dayOfWeek}-${s.trendId}-${s.fromTime}-${s.toTime}`;
+                if (mergedMap.has(key)) {
+                    const existing = mergedMap.get(key);
+                    if ((existing.gender === 'men' && s.gender === 'women') || (existing.gender === 'women' && s.gender === 'men')) {
+                        existing.gender = 'both';
+                        existing.pairedId = s.id;
+                    }
+                } else {
+                    mergedMap.set(key, { ...s });
+                }
+            });
+
+            const local = Array.from(mergedMap.values()).map(s => ({
                 _clientId: Math.random().toString(36).substring(7),
                 id: s.id,
+                pairedId: s.pairedId,
                 dayOfWeek: s.dayOfWeek,
                 trendId: s.trendId,
                 fromTime: s.fromTime,
                 toTime: s.toTime,
                 capacity: String(s.capacity),
                 price: String(s.price),
+                gender: s.gender || 'both',
                 applyAllDays: false
             }));
             setLocalSessions(prev => [...prev.filter(s => s.trendId !== trendToLoad), ...local]);
+            setIsLoadingSessions(false)
         } catch (e) {
             setLoadedTrends(prev => {
                 const next = new Set(prev);
                 next.delete(trendToLoad);
                 return next;
             });
+            setIsLoadingSessions(false)
             toast.error('خطا در بارگزاری سانس‌ها');
         }
     };
@@ -88,6 +115,7 @@ export default function SchedulePage() {
                 toTime: '',
                 capacity: '',
                 price: '',
+                gender: 'both',
                 applyAllDays: false
             }
         ]);
@@ -95,6 +123,41 @@ export default function SchedulePage() {
 
     const updateSession = (clientId: string, updates: Partial<LocalSession>) => {
         setLocalSessions(prev => {
+            const currentSession = prev.find(s => s._clientId === clientId);
+            if (!currentSession) return prev;
+
+            if (updates.fromTime !== undefined || updates.toTime !== undefined) {
+                const newFrom = updates.fromTime !== undefined ? updates.fromTime : currentSession.fromTime;
+                const newTo = updates.toTime !== undefined ? updates.toTime : currentSession.toTime;
+
+                if (newFrom && newTo && newFrom >= newTo) {
+                    toast.error('زمان پایان باید پس از زمان شروع باشد.');
+                    return prev;
+                }
+
+                if (newFrom && newTo) {
+                    const affectedDays = currentSession.applyAllDays
+                        ? WEEK_DAYS.map(d => d.id)
+                        : [currentSession.dayOfWeek];
+
+                    const hasConflict = prev.some(s => {
+                        if (s._clientId === clientId || (currentSession.applyAllDays && s._clonedFrom === clientId)) return false;
+
+                        if (s.trendId === currentSession.trendId && affectedDays.includes(s.dayOfWeek)) {
+                            if (s.fromTime && s.toTime) {
+                                return (newFrom < s.toTime && s.fromTime < newTo);
+                            }
+                        }
+                        return false;
+                    });
+
+                    if (hasConflict) {
+                        toast.error('این زمان با سانس‌های دیگر تداخل دارد.');
+                        return prev;
+                    }
+                }
+            }
+
             let next = prev.map(s => s._clientId === clientId ? { ...s, ...updates } : s);
             const source = next.find(s => s._clientId === clientId);
             if (source && source.applyAllDays) {
@@ -106,7 +169,8 @@ export default function SchedulePage() {
                             ...(updates.fromTime !== undefined && { fromTime: updates.fromTime }),
                             ...(updates.toTime !== undefined && { toTime: updates.toTime }),
                             ...(updates.capacity !== undefined && { capacity: updates.capacity }),
-                            ...(updates.price !== undefined && { price: updates.price })
+                            ...(updates.price !== undefined && { price: updates.price }),
+                            ...(updates.gender !== undefined && { gender: updates.gender })
                         };
                     }
                     return s;
@@ -120,6 +184,23 @@ export default function SchedulePage() {
         setLocalSessions(prev => {
             const source = prev.find(s => s._clientId === clientId);
             if (!source) return prev;
+
+            if (checked && source.fromTime && source.toTime) {
+                const hasConflict = WEEK_DAYS.some(day => {
+                    if (day.id === source.dayOfWeek) return false;
+                    return prev.some(s =>
+                        s.dayOfWeek === day.id &&
+                        s.trendId === source.trendId &&
+                        s.fromTime && s.toTime &&
+                        source.fromTime! < s.toTime && s.fromTime < source.toTime!
+                    );
+                });
+
+                if (hasConflict) {
+                    toast.error('ثبت برای تمام روزها با سانس‌های دیگر تداخل دارد.');
+                    return prev;
+                }
+            }
 
             let updated = [...prev];
             const sourceIdx = updated.findIndex(s => s._clientId === clientId);
@@ -137,6 +218,7 @@ export default function SchedulePage() {
                             toTime: source.toTime,
                             capacity: source.capacity,
                             price: source.price,
+                            gender: source.gender,
                             applyAllDays: false,
                             _clonedFrom: clientId
                         });
@@ -162,12 +244,22 @@ export default function SchedulePage() {
         const clientId = deleteModal.sessionObj._clientId;
         const session = localSessions.find(s => s._clientId === clientId);
 
-        if (session?.id) {
-            // Delete from DB immediately
-            await scheduleService.deleteSession(session.id);
+        if (session?.id && gymId) {
+            try {
+                // Delete from DB immediately
+                await scheduleService.deleteSession(gymId, session.trendId, session.id);
+                if (session.pairedId) {
+                    await scheduleService.deleteSession(gymId, session.trendId, session.pairedId);
+                }
+            } catch (err) {
+                toast.error('خطا در حذف سانس');
+                setDeleteModal({ isOpen: false, sessionObj: null });
+                return;
+            }
         }
         setLocalSessions(prev => prev.filter(s => s._clientId !== clientId));
         toast.success('حذف سانس با موفقیت انجام شد.');
+        setDeleteModal({ isOpen: false, sessionObj: null });
     };
 
     const handlePreSave = () => {
@@ -200,16 +292,32 @@ export default function SchedulePage() {
                 return;
             }
 
-            for (const s of changesToSave) {
-                if (!s.fromTime || !s.toTime || !s.capacity || !s.price) continue;
-                await scheduleService.addSession({
+            if (!gymId) {
+                toast.error('اطلاعات باشگاه یافت نشد.');
+                setIsSaving(false);
+                return;
+            }
+
+            const activeTrendIds = new Set(changesToSave.map(s => s.trendId));
+
+            for (const trendId of activeTrendIds) {
+                const sessionsForTrend = changesToSave.filter(s => s.trendId === trendId);
+                const validSessions = sessionsForTrend.filter(s => s.fromTime && s.toTime && s.capacity && s.price);
+
+                if (validSessions.length === 0) continue;
+
+                const iSessions = validSessions.map(s => ({
+                    id: '',
                     dayOfWeek: s.dayOfWeek,
                     trendId: s.trendId,
                     fromTime: s.fromTime,
                     toTime: s.toTime,
                     capacity: Number(s.capacity),
-                    price: Number(s.price)
-                }, false);
+                    price: Number(s.price),
+                    gender: s.gender as 'men' | 'women' | 'both'
+                }));
+
+                await scheduleService.addSessionsForTrend(gymId, trendId, iSessions);
             }
 
             toast.success(onlyCurrent ? 'تغییرات رشته فعلی با موفقیت ثبت شد.' : 'تغییرات تمامی رشته‌ها ثبت شد.');
@@ -268,46 +376,53 @@ export default function SchedulePage() {
                             />
 
                             {/* Calendar Board */}
-                            <div className="flex-1 overflow-auto pb-6 border-b border-gray-100 custom-scrollbar relative flex min-h-[644px]">
-                                <div className="flex min-w-[max-content] flex-1 pb-24">
-                                    {WEEK_DAYS.map((day, index) => {
-                                        const daySessions = localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend);
-
-                                        return (
-                                            <div key={day.id} className={`w-[270px] shrink-0 flex flex-col px-3 bg-[#e8e8e840] ${index > 0 ? 'border-r border-[#e8e8e8]' : ''}`}>
-                                                <h3 className="text-[13px] font-bold text-gray-700 text-center mb-5 pt-5">
-                                                    {day.name}
-                                                </h3>
-
-                                                <div className="flex flex-col gap-4">
-                                                    {daySessions.map((session, sIndex) => (
-                                                        <SessionCard
-                                                            key={session._clientId}
-                                                            session={session}
-                                                            index={sIndex}
-                                                            activePicker={activePicker}
-                                                            setActivePicker={setActivePicker}
-                                                            pickerRef={pickerRef}
-                                                            updateSession={updateSession}
-                                                            confirmDelete={confirmDelete}
-                                                            toggleAllDays={handleToggleAllDays}
-                                                        />
-                                                    ))}
-
-                                                    {/* Add Session Button */}
-                                                    <button
-                                                        onClick={() => handleAddSession(day.id)}
-                                                        className="w-full py-[14px] border-[1.5px] border-dashed border-primary-200 rounded-[12px] text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary-50 transition-all duration-200 bg-white"
-                                                    >
-                                                        <HiOutlinePlus size={16} className="text-primary-400" />
-                                                        افزودن سانس
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
+                            {(isGymsLoading || isLoadingSessions) ? (
+                                <div className="flex-1 flex flex-col items-center justify-center min-h-[644px] pb-6 border-b border-gray-100">
+                                    <div className="w-10 h-10 border-[3.5px] border-gray-100 border-t-primary-500 rounded-full animate-spin mb-4"></div>
+                                    <span className="text-[13px] text-gray-400 font-medium tracking-wide">در حال دریافت اطلاعات...</span>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex-1 overflow-auto pb-6 border-b border-gray-100 custom-scrollbar relative flex min-h-[644px]">
+                                    <div className="flex min-w-[max-content] flex-1 pb-24">
+                                        {WEEK_DAYS.map((day, index) => {
+                                            const daySessions = localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend);
+
+                                            return (
+                                                <div key={day.id} className={`w-[270px] shrink-0 flex flex-col px-3 bg-[#e8e8e840] ${index > 0 ? 'border-r border-[#e8e8e8]' : ''}`}>
+                                                    <h3 className="text-[13px] font-bold text-gray-700 text-center mb-5 pt-5">
+                                                        {day.name}
+                                                    </h3>
+
+                                                    <div className="flex flex-col gap-4">
+                                                        {daySessions.map((session, sIndex) => (
+                                                            <SessionCard
+                                                                key={session._clientId}
+                                                                session={session}
+                                                                index={sIndex}
+                                                                activePicker={activePicker}
+                                                                setActivePicker={setActivePicker}
+                                                                pickerRef={pickerRef}
+                                                                updateSession={updateSession}
+                                                                confirmDelete={confirmDelete}
+                                                                toggleAllDays={handleToggleAllDays}
+                                                            />
+                                                        ))}
+
+                                                        {/* Add Session Button */}
+                                                        <button
+                                                            onClick={() => handleAddSession(day.id)}
+                                                            className="w-full py-[14px] border-[1.5px] border-dashed border-primary-200 rounded-[12px] text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary-50 transition-all duration-200 bg-white"
+                                                        >
+                                                            <HiOutlinePlus size={16} className="text-primary-400" />
+                                                            افزودن سانس
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Submit DB Changes */}
                             <div className="pt-6 mt-6 flex items-center justify-start shrink-0">

@@ -2,10 +2,12 @@ import { LuTriangleAlert, LuX } from 'react-icons/lu';
 
 export interface ClassItemData {
     id: string;
+    gymId?: string;
+    gymTrendId?: string;
     day: string;
     sport: string;
     gender: string;
-    price: string;
+    price: string | number;
     time: string;
     reservations: number;
     isActive: boolean;
@@ -16,9 +18,10 @@ interface StatusToggleModalProps {
     onClose: () => void;
     onConfirm: () => void;
     classData: ClassItemData | null;
+    isLoading?: boolean;
 }
 
-export default function StatusToggleModal({ isOpen, onClose, onConfirm, classData }: StatusToggleModalProps) {
+export default function StatusToggleModal({ isOpen, onClose, onConfirm, classData, isLoading = false }: StatusToggleModalProps) {
     if (!isOpen || !classData) return null;
 
     const isDeactivating = classData.isActive;
@@ -87,15 +90,24 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
                 <div className="flex gap-4">
                     <button
                         onClick={onClose}
-                        className="flex-1 h-[48px] bg-white border border-gray-200 text-gray-600 rounded-[12px] text-[14px] font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                        disabled={isLoading}
+                        className="flex-1 h-[48px] bg-white border border-gray-200 text-gray-600 rounded-[12px] text-[14px] font-bold hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         انصراف
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors shadow-[0_4px_12px_rgba(124,77,255,0.25)]"
+                        disabled={isLoading}
+                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors shadow-[0_4px_12px_rgba(124,77,255,0.25)] disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2"
                     >
-                        تایید
+                        {isLoading ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>در حال ثبت...</span>
+                            </>
+                        ) : (
+                            'تایید'
+                        )}
                     </button>
                 </div>
 

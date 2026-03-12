@@ -8,7 +8,7 @@ import EditGymInfoModal from './components/EditGymInfoModal';
 import EditLocationModal from './components/EditLocationModal';
 import EditImagesModal from './components/EditImagesModal';
 
-import { useGyms } from '../../hooks/useGym';
+import { useGyms, useToggleGymActivityTrend } from '../../hooks/useGym';
 import { fileService } from '../../services/fileService';
 
 export default function ProfilePage() {
@@ -76,8 +76,23 @@ export default function ProfilePage() {
         return '—';
     };
 
+    const toggleGymActivityTrendMutation = useToggleGymActivityTrend();
+
     const toggleSport = (id: string | number) => {
+        if (!gym?.gymId) return;
+
+        // Optimistically update the state
         setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
+
+        toggleGymActivityTrendMutation.mutate(
+            { gymId: gym.gymId, gymTrendId: String(id) },
+            {
+                onError: () => {
+                    // Revert state if error
+                    setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
+                }
+            }
+        );
     };
 
     return (
@@ -196,7 +211,8 @@ export default function ProfilePage() {
                                         {/* Custom Toggle Switch */}
                                         <button
                                             onClick={() => toggleSport(sport.id)}
-                                            className={`w-[46px] h-6 rounded-full transition-colors duration-200 ease-in-out relative flex items-center shadow-inner cursor-pointer ${sport.isActive ? 'bg-primary-600' : 'bg-gray-200'}`}
+                                            disabled={toggleGymActivityTrendMutation.isPending}
+                                            className={`w-[46px] h-6 rounded-full transition-colors duration-200 ease-in-out relative flex items-center shadow-inner ${sport.isActive ? 'bg-primary-600' : 'bg-gray-200'} ${toggleGymActivityTrendMutation.isPending ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                                         >
                                             <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out absolute ${sport.isActive ? '-translate-x-[22px]' : 'translate-x-0'}`} style={{ right: '4px' }} />
                                         </button>
