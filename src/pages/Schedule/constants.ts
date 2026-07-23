@@ -1,11 +1,9 @@
-
-
 export const WEEK_DAYS = [
     { id: 0, name: 'شنبه' },
-    { id: 1, name: 'یک‌شنبه' },
-    { id: 2, name: 'دوشنبه' },
-    { id: 3, name: 'سه‌شنبه' },
+    { id: 1, name: 'یک شنبه' },
+    { id: 2, name: 'دو شنبه' },
+    { id: 3, name: 'سه شنبه' },
     { id: 4, name: 'چهارشنبه' },
-    { id: 5, name: 'پنج‌شنبه' },
+    { id: 5, name: 'پنج شنبه' },
     { id: 6, name: 'جمعه' },
 ];

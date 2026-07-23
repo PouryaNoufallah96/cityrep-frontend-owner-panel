@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-
 import { HiOutlinePlus } from 'react-icons/hi';
 import Sidebar from '../../components/layout/Sidebar';
 import PageHeader from '../../components/layout/PageHeader';
@@ -12,22 +10,21 @@ import type { LocalSession } from './types';
 import TrendTabs from './components/TrendTabs';
 import SessionCard from './components/SessionCard';
 import SaveOptionsModal from './components/SaveOptionsModal';
-import { useGyms } from '../../hooks/useGym';
+import { useGyms, useSessionPriceBand } from '../../hooks/useGym';
+import { toPersianDigits } from '../../utils/format';
 
 export default function SchedulePage() {
-    const { gymOwner } = useAuth();
-
     const { data: gymsResponse, isLoading: isGymsLoading } = useGyms();
+    const { data: priceBand } = useSessionPriceBand();
     const gym = gymsResponse?.data?.data?.[0];
     const gymId = gym?.gymId || '';
 
-    // Only map active trends from the gym object
     const trends = gym?.trends
-        ?.filter((t: any) => t.isActive)
-        .map((t: any) => ({
+        ?.filter(t => t.isActive)
+        .map(t => ({
             id: t.gymTrendId,
             title: t.title,
-            iconUrl: t.trendIconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.trendIconUrl}` : '🏋️'
+            iconUrl: t.trendIconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.trendIconUrl}` : undefined,
         })) || [];
 
     const [selectedTrend, setSelectedTrend] = useState('');
@@ -44,18 +41,6 @@ export default function SchedulePage() {
         sessionObj: null
     });
     const [saveModalOpen, setSaveModalOpen] = useState(false);
-
-    useEffect(() => {
-        if (trends.length > 0 && !selectedTrend) {
-            setSelectedTrend(trends[0].id);
-        }
-    }, [trends, selectedTrend]);
-
-    useEffect(() => {
-        if (selectedTrend && !loadedTrends.has(selectedTrend) && gymId) {
-            loadSessions(selectedTrend);
-        }
-    }, [selectedTrend, loadedTrends, gymId]);
 
     const loadSessions = async (trendToLoad: string) => {
         if (!gymId) return;
@@ -93,7 +78,7 @@ export default function SchedulePage() {
             }));
             setLocalSessions(prev => [...prev.filter(s => s.trendId !== trendToLoad), ...local]);
             setIsLoadingSessions(false)
-        } catch (e) {
+        } catch {
             setLoadedTrends(prev => {
                 const next = new Set(prev);
                 next.delete(trendToLoad);
@@ -104,7 +89,18 @@ export default function SchedulePage() {
         }
     };
 
+    const handleSelectTrend = (trendId: string) => {
+        setSelectedTrend(trendId);
+        if (!loadedTrends.has(trendId) && gymId) {
+            loadSessions(trendId);
+        }
+    };
+
     const handleAddSession = (dayId: number) => {
+        if (!selectedTrend) {
+            toast.info('ابتدا یک رشته را انتخاب کنید.');
+            return;
+        }
         setLocalSessions(prev => [
             ...prev,
             {
@@ -122,48 +118,54 @@ export default function SchedulePage() {
     };
 
     const updateSession = (clientId: string, updates: Partial<LocalSession>) => {
-        setLocalSessions(prev => {
-            const currentSession = prev.find(s => s._clientId === clientId);
-            if (!currentSession) return prev;
+        const currentSession = localSessions.find(s => s._clientId === clientId);
+        if (!currentSession) return;
 
-            if (updates.fromTime !== undefined || updates.toTime !== undefined) {
-                const newFrom = updates.fromTime !== undefined ? updates.fromTime : currentSession.fromTime;
-                const newTo = updates.toTime !== undefined ? updates.toTime : currentSession.toTime;
+        if (updates.fromTime !== undefined || updates.toTime !== undefined) {
+            const newFrom = updates.fromTime !== undefined ? updates.fromTime : currentSession.fromTime;
+            const newTo = updates.toTime !== undefined ? updates.toTime : currentSession.toTime;
 
-                if (newFrom && newTo && newFrom >= newTo) {
-                    toast.error('زمان پایان باید پس از زمان شروع باشد.');
-                    return prev;
-                }
-
-                if (newFrom && newTo) {
-                    const affectedDays = currentSession.applyAllDays
-                        ? WEEK_DAYS.map(d => d.id)
-                        : [currentSession.dayOfWeek];
-
-                    const hasConflict = prev.some(s => {
-                        if (s._clientId === clientId || (currentSession.applyAllDays && s._clonedFrom === clientId)) return false;
-
-                        if (s.trendId === currentSession.trendId && affectedDays.includes(s.dayOfWeek)) {
-                            if (s.fromTime && s.toTime) {
-                                return (newFrom < s.toTime && s.fromTime < newTo);
-                            }
-                        }
-                        return false;
-                    });
-
-                    if (hasConflict) {
-                        toast.error('این زمان با سانس‌های دیگر تداخل دارد.');
-                        return prev;
-                    }
-                }
+            if (newFrom && newTo && newFrom >= newTo) {
+                toast.error('زمان پایان باید پس از زمان شروع باشد.', { toastId: 'session-time-order' });
+                return;
             }
 
+            if (newFrom && newTo) {
+                const sourceId = currentSession._clonedFrom || currentSession._clientId;
+                const linked = (s: LocalSession) =>
+                    s._clientId === sourceId || s._clonedFrom === sourceId || s._clientId === clientId;
+
+                const affectedDays = (currentSession.applyAllDays || currentSession._clonedFrom)
+                    ? WEEK_DAYS.map(d => d.id)
+                    : [currentSession.dayOfWeek];
+
+                const hasConflict = localSessions.some(s => {
+                    if (linked(s)) return false;
+
+                    if (s.trendId === currentSession.trendId && affectedDays.includes(s.dayOfWeek)) {
+                        if (s.fromTime && s.toTime) {
+                            return (newFrom < s.toTime && s.fromTime < newTo);
+                        }
+                    }
+                    return false;
+                });
+
+                if (hasConflict) {
+                    toast.error('این زمان با سانس‌های دیگر تداخل دارد.', { toastId: 'session-time-conflict' });
+                    return;
+                }
+            }
+        }
+
+        setLocalSessions(prev => {
             let next = prev.map(s => s._clientId === clientId ? { ...s, ...updates } : s);
-            const source = next.find(s => s._clientId === clientId);
-            if (source && source.applyAllDays) {
-                // Keep connected clones implicitly synchronized with the visual edit commands
+            const edited = next.find(s => s._clientId === clientId);
+            if (!edited) return next;
+
+            const sourceId = edited._clonedFrom || edited._clientId;
+            if (edited.applyAllDays || edited._clonedFrom) {
                 next = next.map(s => {
-                    if (s._clonedFrom === clientId) {
+                    if (s._clientId === sourceId || s._clonedFrom === sourceId) {
                         return {
                             ...s,
                             ...(updates.fromTime !== undefined && { fromTime: updates.fromTime }),
@@ -181,52 +183,57 @@ export default function SchedulePage() {
     };
 
     const handleToggleAllDays = (clientId: string, checked: boolean) => {
-        setLocalSessions(prev => {
-            const source = prev.find(s => s._clientId === clientId);
-            if (!source) return prev;
+        const clicked = localSessions.find(s => s._clientId === clientId);
+        if (!clicked) return;
 
-            if (checked && source.fromTime && source.toTime) {
-                const hasConflict = WEEK_DAYS.some(day => {
-                    if (day.id === source.dayOfWeek) return false;
-                    return prev.some(s =>
-                        s.dayOfWeek === day.id &&
-                        s.trendId === source.trendId &&
-                        s.fromTime && s.toTime &&
-                        source.fromTime! < s.toTime && s.fromTime < source.toTime!
-                    );
-                });
+        const sourceId = clicked._clonedFrom || clicked._clientId;
+        const source = localSessions.find(s => s._clientId === sourceId);
+        if (!source) return;
 
-                if (hasConflict) {
-                    toast.error('ثبت برای تمام روزها با سانس‌های دیگر تداخل دارد.');
-                    return prev;
-                }
+        if (checked && source.fromTime && source.toTime) {
+            const hasConflict = WEEK_DAYS.some(day => {
+                if (day.id === source.dayOfWeek) return false;
+                return localSessions.some(s =>
+                    s.dayOfWeek === day.id &&
+                    s.trendId === source.trendId &&
+                    !s._clonedFrom &&
+                    s._clientId !== sourceId &&
+                    s.fromTime && s.toTime &&
+                    source.fromTime! < s.toTime && s.fromTime < source.toTime!
+                );
+            });
+
+            if (hasConflict) {
+                toast.error('ثبت برای تمام روزها با سانس‌های دیگر تداخل دارد.', { toastId: 'alldays-conflict' });
+                return;
             }
+        }
 
-            let updated = [...prev];
-            const sourceIdx = updated.findIndex(s => s._clientId === clientId);
+        setLocalSessions(prev => {
+            const updated = prev.filter(s => !(s._clonedFrom === sourceId && !s.id));
+            const sourceIdx = updated.findIndex(s => s._clientId === sourceId);
+            if (sourceIdx === -1) return prev;
+
             updated[sourceIdx] = { ...updated[sourceIdx], applyAllDays: checked };
 
             if (checked) {
-                // Map the clone visually into the other 6 column days explicitly
+                const src = updated[sourceIdx];
                 WEEK_DAYS.forEach(day => {
-                    if (day.id !== source.dayOfWeek) {
+                    if (day.id !== src.dayOfWeek) {
                         updated.push({
                             _clientId: Math.random().toString(36).substring(7),
                             dayOfWeek: day.id,
-                            trendId: source.trendId,
-                            fromTime: source.fromTime,
-                            toTime: source.toTime,
-                            capacity: source.capacity,
-                            price: source.price,
-                            gender: source.gender,
-                            applyAllDays: false,
-                            _clonedFrom: clientId
+                            trendId: src.trendId,
+                            fromTime: src.fromTime,
+                            toTime: src.toTime,
+                            capacity: src.capacity,
+                            price: src.price,
+                            gender: src.gender,
+                            applyAllDays: true,
+                            _clonedFrom: sourceId
                         });
                     }
                 });
-            } else {
-                // Remove unsaved clones if untoggled before making POST hooks
-                updated = updated.filter(s => !(s._clonedFrom === clientId && !s.id));
             }
             return updated;
         });
@@ -246,18 +253,19 @@ export default function SchedulePage() {
 
         if (session?.id && gymId) {
             try {
-                // Delete from DB immediately
                 await scheduleService.deleteSession(gymId, session.trendId, session.id);
                 if (session.pairedId) {
                     await scheduleService.deleteSession(gymId, session.trendId, session.pairedId);
                 }
-            } catch (err) {
+            } catch {
                 toast.error('خطا در حذف سانس');
                 setDeleteModal({ isOpen: false, sessionObj: null });
                 return;
             }
         }
-        setLocalSessions(prev => prev.filter(s => s._clientId !== clientId));
+        setLocalSessions(prev => prev.filter(s =>
+            s._clientId !== clientId && s._clonedFrom !== clientId
+        ));
         toast.success('حذف سانس با موفقیت انجام شد.');
         setDeleteModal({ isOpen: false, sessionObj: null });
     };
@@ -274,7 +282,7 @@ export default function SchedulePage() {
         if (unsavedOther.length > 0) {
             setSaveModalOpen(true);
         } else {
-            handlePerformSave(true); // Save current because it's the only one
+            handlePerformSave(true);
         }
     };
 
@@ -298,15 +306,31 @@ export default function SchedulePage() {
                 return;
             }
 
+            const incomplete = changesToSave.some(s => !s.fromTime || !s.toTime || !s.capacity || !s.price);
+            if (incomplete) {
+                toast.error('لطفا تمام فیلدهای سانس‌های جدید را تکمیل کنید.');
+                setIsSaving(false);
+                return;
+            }
+
+            if (priceBand) {
+                const outOfRange = changesToSave.some(s => {
+                    const price = Number(s.price);
+                    return price < priceBand.fromPrice || price > priceBand.toPrice;
+                });
+                if (outOfRange) {
+                    toast.error('مبلغ یکی از سانس‌ها خارج از بازه مجاز است.');
+                    setIsSaving(false);
+                    return;
+                }
+            }
+
             const activeTrendIds = new Set(changesToSave.map(s => s.trendId));
 
             for (const trendId of activeTrendIds) {
                 const sessionsForTrend = changesToSave.filter(s => s.trendId === trendId);
-                const validSessions = sessionsForTrend.filter(s => s.fromTime && s.toTime && s.capacity && s.price);
 
-                if (validSessions.length === 0) continue;
-
-                const iSessions = validSessions.map(s => ({
+                const iSessions = sessionsForTrend.map(s => ({
                     id: '',
                     dayOfWeek: s.dayOfWeek,
                     trendId: s.trendId,
@@ -320,27 +344,31 @@ export default function SchedulePage() {
                 await scheduleService.addSessionsForTrend(gymId, trendId, iSessions);
             }
 
-            toast.success(onlyCurrent ? 'تغییرات رشته فعلی با موفقیت ثبت شد.' : 'تغییرات تمامی رشته‌ها ثبت شد.');
+            toast.success('تغییرات بخش افزودن سانس با موفقیت ثبت شد.');
 
-            // Clear cache to trigger re-fetch dynamically
-            setLoadedTrends(prev => {
-                const next = new Set(prev);
-                if (onlyCurrent) {
+            if (onlyCurrent) {
+                setLoadedTrends(prev => {
+                    const next = new Set(prev);
                     next.delete(selectedTrend);
-                } else {
-                    next.clear();
-                    setLocalSessions([]); // Complete wipe triggers fetch for selection
+                    return next;
+                });
+                if (selectedTrend) {
+                    await loadSessions(selectedTrend);
                 }
-                return next;
-            });
-        } catch (e) {
+            } else {
+                setLoadedTrends(new Set());
+                setLocalSessions([]);
+                if (selectedTrend) {
+                    await loadSessions(selectedTrend);
+                }
+            }
+        } catch {
             toast.error('خطا در ثبت تغییرات');
         } finally {
             setIsSaving(false);
         }
     };
 
-    // Auto-close open picker when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
@@ -358,42 +386,50 @@ export default function SchedulePage() {
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
 
 
-                {/* Main Content scrollable */}
-                <main className="flex-1 overflow-y-auto p-8 max-sm:p-4 bg-gray-50 relative z-10">
-                    <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+                <main className="flex-1 overflow-y-auto p-6 max-sm:p-4 bg-gray-50 relative z-10">
+                    <div className="max-w-[1200px] mx-auto flex flex-col gap-5 h-full">
 
-                        {/* Top Header Card */}
-                        <PageHeader title="مدیریت زمان‌بندی" subtitle={gymOwner?.fullName} />
+                        <PageHeader title="مدیریت زمان‌بندی" />
 
-                        {/* Content Card */}
-                        <div className="bg-white rounded-2xl shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-gray-100 p-8 min-h-[calc(100vh-220px)] flex flex-col">
+                        <div className="bg-white rounded-2xl border border-gray-100 p-6 sm:p-8 flex flex-col flex-1 min-h-0">
 
-                            {/* Trends Tab */}
                             <TrendTabs
                                 trends={trends}
                                 selectedTrend={selectedTrend}
-                                setSelectedTrend={setSelectedTrend}
+                                setSelectedTrend={handleSelectTrend}
                             />
 
-                            {/* Calendar Board */}
-                            {(isGymsLoading || isLoadingSessions) ? (
-                                <div className="flex-1 flex flex-col items-center justify-center min-h-[644px] pb-6 border-b border-gray-100">
+                            {(isGymsLoading || (selectedTrend && isLoadingSessions)) ? (
+                                <div className="flex-1 flex flex-col items-center justify-center min-h-[360px] pb-6 border-b border-gray-100">
                                     <div className="w-10 h-10 border-[3.5px] border-gray-100 border-t-primary-500 rounded-full animate-spin mb-4"></div>
                                     <span className="text-[13px] text-gray-400 font-medium tracking-wide">در حال دریافت اطلاعات...</span>
                                 </div>
                             ) : (
-                                <div className="flex-1 overflow-auto pb-6 border-b border-gray-100 custom-scrollbar relative flex min-h-[644px]">
-                                    <div className="flex min-w-[max-content] flex-1 pb-24">
+                                <div className="flex-1 overflow-x-auto overflow-y-auto pb-4 border-b border-gray-100 custom-scrollbar relative flex min-h-[360px]">
+                                    <div className="flex min-w-max flex-1 pb-4 bg-[#F8F8F8] rounded-xl">
                                         {WEEK_DAYS.map((day, index) => {
-                                            const daySessions = localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend);
+                                            const daySessions = selectedTrend
+                                                ? localSessions.filter(s => s.dayOfWeek === day.id && s.trendId === selectedTrend)
+                                                : [];
 
                                             return (
-                                                <div key={day.id} className={`w-[270px] shrink-0 flex flex-col px-3 bg-[#e8e8e840] ${index > 0 ? 'border-r border-[#e8e8e8]' : ''}`}>
-                                                    <h3 className="text-[13px] font-bold text-gray-700 text-center mb-5 pt-5">
+                                                <div
+                                                    key={day.id}
+                                                    className={`w-[248px] shrink-0 flex flex-col px-3 ${index > 0 ? 'border-r border-[#E8E8E8]' : ''}`}
+                                                >
+                                                    <h3 className="text-[13px] font-bold text-gray-500 text-center mb-4 pt-4">
                                                         {day.name}
                                                     </h3>
 
-                                                    <div className="flex flex-col gap-4">
+                                                    <div className="flex flex-col gap-3 pb-4">
+                                                        <button
+                                                            onClick={() => handleAddSession(day.id)}
+                                                            className="w-full py-3.5 border border-dashed border-primary-300 rounded-xl text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 bg-white hover:bg-primary-50 transition-all duration-200"
+                                                        >
+                                                            <HiOutlinePlus size={16} className="text-primary-500" />
+                                                            افزودن سانس
+                                                        </button>
+
                                                         {daySessions.map((session, sIndex) => (
                                                             <SessionCard
                                                                 key={session._clientId}
@@ -405,17 +441,9 @@ export default function SchedulePage() {
                                                                 updateSession={updateSession}
                                                                 confirmDelete={confirmDelete}
                                                                 toggleAllDays={handleToggleAllDays}
+                                                                priceBand={priceBand}
                                                             />
                                                         ))}
-
-                                                        {/* Add Session Button */}
-                                                        <button
-                                                            onClick={() => handleAddSession(day.id)}
-                                                            className="w-full py-[14px] border-[1.5px] border-dashed border-primary-200 rounded-[12px] text-primary-500 text-[12.5px] font-bold flex items-center justify-center gap-1.5 hover:bg-primary-50 transition-all duration-200 bg-white"
-                                                        >
-                                                            <HiOutlinePlus size={16} className="text-primary-400" />
-                                                            افزودن سانس
-                                                        </button>
                                                     </div>
                                                 </div>
                                             )
@@ -424,12 +452,11 @@ export default function SchedulePage() {
                                 </div>
                             )}
 
-                            {/* Submit DB Changes */}
-                            <div className="pt-6 mt-6 flex items-center justify-start shrink-0">
+                            <div className="pt-5 flex items-center justify-end shrink-0">
                                 <button
                                     onClick={handlePreSave}
                                     disabled={isSaving}
-                                    className="px-10 py-3.5 bg-primary-600 text-white rounded-[12px] text-[13px] font-bold shadow-[0_4px_20px_rgba(124,77,255,0.25)] hover:bg-primary-700 hover:shadow-[0_4px_25px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 transition-all outline-none disabled:opacity-70 disabled:hover:translate-y-0 disabled:cursor-wait"
+                                    className="px-10 py-3.5 bg-primary-500 text-white rounded-full text-[13px] font-bold hover:bg-primary-600 transition-colors outline-none disabled:opacity-70 disabled:cursor-wait"
                                 >
                                     {isSaving ? 'در حال ثبت...' : 'ثبت تغییرات'}
                                 </button>
@@ -457,10 +484,10 @@ export default function SchedulePage() {
                 isDestructive={true}
                 details={
                     deleteModal.sessionObj ? [
-                        { label: 'نام رشته', value: trends.find((t: any) => t.id === deleteModal.sessionObj!.trendId)?.title || '' },
-                        { label: 'روز', value: WEEK_DAYS.find((d: any) => d.id === deleteModal.sessionObj!.dayOfWeek)?.name || '' },
-                        { label: 'ساعت شروع', value: deleteModal.sessionObj.fromTime || '-' },
-                        { label: 'ساعت پایان', value: deleteModal.sessionObj.toTime || '-' }
+                        { label: 'نام رشته', value: trends.find(t => t.id === deleteModal.sessionObj!.trendId)?.title || '' },
+                        { label: 'روز', value: WEEK_DAYS.find(d => d.id === deleteModal.sessionObj!.dayOfWeek)?.name || '' },
+                        { label: 'ساعت شروع', value: deleteModal.sessionObj.fromTime ? toPersianDigits(deleteModal.sessionObj.fromTime) : '-' },
+                        { label: 'ساعت پایان', value: deleteModal.sessionObj.toTime ? toPersianDigits(deleteModal.sessionObj.toTime) : '-' }
                     ] : []
                 }
             />
