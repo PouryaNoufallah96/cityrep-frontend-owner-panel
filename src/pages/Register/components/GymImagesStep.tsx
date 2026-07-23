@@ -1,5 +1,5 @@
 import { useRef, type ChangeEvent } from 'react';
-import { HiOutlinePhotograph, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineX, HiPlus } from 'react-icons/hi';
 import type { StepProps } from '../types';
 
 interface GymImagesStepProps extends StepProps {
@@ -11,14 +11,16 @@ export default function GymImagesStep({ formData, handleImageUpload, removeImage
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="animate-[fadeIn_0.3s_ease-out]">
-            <div
-                className="border-2 border-dashed border-gray-300 rounded-[10px] p-10 text-center cursor-pointer transition-all duration-200 mb-5 hover:border-primary-400 hover:bg-primary-50"
+        <div className="bg-[#F9F9F9] rounded-2xl p-5 min-h-[300px] animate-[fadeIn_0.3s_ease-out]">
+            <button
+                type="button"
+                className="w-full h-[64px] border border-dashed border-[#D0D0D0] rounded-xl flex items-center justify-center gap-2.5 text-gray-500 bg-white hover:border-[#3C25C9]/40 transition-colors cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
             >
-                <HiOutlinePhotograph className="text-[40px] text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">برای آپلود تصاویر کلیک کنید</p>
-                <p className="text-xs text-gray-400 mt-1">PNG, JPG تا ۵ مگابایت</p>
+                <span className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center shrink-0">
+                    <HiPlus size={16} className="text-gray-400" />
+                </span>
+                <span className="text-sm font-medium text-gray-600">تصویر باشگاه</span>
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -27,17 +29,18 @@ export default function GymImagesStep({ formData, handleImageUpload, removeImage
                     className="hidden"
                     onChange={handleImageUpload}
                 />
-            </div>
+            </button>
 
             {formData.images.length > 0 && (
-                <div className="grid grid-cols-4 gap-3 max-sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-3 mt-4 max-sm:grid-cols-2">
                     {formData.images.map((img, index) => (
-                        <div key={index} className="relative aspect-square rounded-[10px] overflow-hidden border border-gray-200">
-                            <img src={img.url} alt={`Upload ${index}`} className="w-full h-full object-cover" />
+                        <div key={index} className="relative aspect-[4/3] rounded-[10px] overflow-hidden group bg-white">
+                            <img src={img.url} alt="" className="w-full h-full object-cover" />
                             <button
                                 type="button"
-                                className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-red-500/90 text-white flex items-center justify-center text-sm cursor-pointer transition-transform hover:scale-110 hover:bg-red-500"
+                                className="absolute top-2 left-2 w-6 h-6 rounded-full bg-black/45 text-white flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={() => removeImage(index)}
+                                aria-label="حذف تصویر"
                             >
                                 <HiOutlineX size={14} />
                             </button>

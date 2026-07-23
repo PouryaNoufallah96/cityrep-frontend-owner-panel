@@ -1,55 +1,49 @@
 import { HiOutlineX } from 'react-icons/hi';
+import { LuChevronDown } from 'react-icons/lu';
+import Input from '../../../components/ui/Input';
+import { toPersianDigits } from '../../../utils/format';
 import type { StepProps, GymFormData } from '../types';
 
+const toEnglishDigits = (value: string) =>
+    value.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+
 export default function GymInfoStep({ formData, updateField, clearField }: StepProps) {
-    const renderInput = (
-        field: keyof GymFormData,
-        label: string,
-        placeholder: string,
-        dir: string = 'rtl'
-    ) => {
-        const value = formData[field] as string;
-        return (
-            <div className="mb-6">
-                <label className="block text-right text-[13px] font-semibold text-gray-900 mb-2">
-                    {label}
-                </label>
-                <div className="relative flex items-center">
-                    <input
-                        type="text"
-                        className="w-full px-4 py-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm text-gray-900 bg-white transition-all duration-200 placeholder:text-gray-400 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/10 outline-none"
-                        placeholder={placeholder}
-                        value={value}
-                        onChange={(e) => updateField(field, e.target.value)}
-                        dir={dir}
-                        style={{ textAlign: 'right' }}
-                    />
-                    {value && (
-                        <button
-                            type="button"
-                            className="absolute left-3.5 text-gray-400 hover:text-red-500 transition-colors flex items-center"
-                            onClick={() => clearField(field)}
-                        >
-                            <HiOutlineX size={16} />
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    };
+    const clearButton = (field: keyof GymFormData, value: string) =>
+        value ? (
+            <button
+                type="button"
+                className="hover:text-gray-600 transition-colors flex items-center"
+                onClick={() => clearField(field)}
+                aria-label="پاک کردن"
+            >
+                <HiOutlineX size={15} />
+            </button>
+        ) : null;
 
     return (
-        <div className="animate-[fadeIn_0.3s_ease-out]">
-            {renderInput('title', 'نام باشگاه', 'نام باشگاه')}
-            {renderInput('phoneNumber', 'شماره تماس', 'شماره تماس', 'ltr')}
+        <div className="bg-[#F9F9F9] rounded-2xl p-6 flex flex-col gap-5 animate-[fadeIn_0.3s_ease-out]">
+            <Input
+                label="نام باشگاه"
+                placeholder="نام باشگاه"
+                value={formData.title}
+                onChange={(e) => updateField('title', e.target.value)}
+                suffix={clearButton('title', formData.title)}
+            />
 
-            <div className="mb-6">
-                <label className="block text-right text-[13px] font-semibold text-gray-900 mb-2">
-                    جنسیت
-                </label>
-                <div className="relative">
+            <Input
+                label="شماره تماس"
+                placeholder="شماره تماس"
+                value={toPersianDigits(formData.phoneNumber)}
+                onChange={(e) => updateField('phoneNumber', toEnglishDigits(e.target.value))}
+                dir="ltr"
+                suffix={clearButton('phoneNumber', formData.phoneNumber)}
+            />
+
+            <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-gray-700 text-right">جنسیت</label>
+                <div className="relative flex items-center">
                     <select
-                        className="w-full px-4 py-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm text-gray-900 bg-white transition-all duration-200 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/10 outline-none appearance-none cursor-pointer"
+                        className={`w-full h-12 px-4 border border-gray-200 rounded-xl text-[14px] bg-white transition-all focus:border-primary-400 focus:ring-2 focus:ring-primary-50 outline-none appearance-none cursor-pointer ${formData.supportedGender ? 'text-gray-800' : 'text-gray-400'}`}
                         value={formData.supportedGender}
                         onChange={(e) => updateField('supportedGender', e.target.value)}
                         dir="rtl"
@@ -59,15 +53,17 @@ export default function GymInfoStep({ formData, updateField, clearField }: StepP
                         <option value="Female">زنانه</option>
                         <option value="Both">هر دو</option>
                     </select>
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M6 9l6 6 6-6" />
-                        </svg>
-                    </div>
+                    <LuChevronDown size={18} className="absolute left-3 text-gray-400 pointer-events-none" />
                 </div>
             </div>
 
-            {renderInput('address', 'آدرس', 'آدرس')}
+            <Input
+                label="آدرس"
+                placeholder="آدرس"
+                value={formData.address}
+                onChange={(e) => updateField('address', e.target.value)}
+                suffix={clearButton('address', formData.address)}
+            />
         </div>
     );
 }

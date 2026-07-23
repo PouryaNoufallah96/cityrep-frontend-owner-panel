@@ -2,15 +2,14 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type C
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineArrowRight } from 'react-icons/hi';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
 import { useRequestOtp, useVerifyOtp, useGymOwnerData } from '../../hooks/useAuth';
 import Logo from '../../components/Logo';
+import Input from '../../components/ui/Input';
 
 type Step = 'phone' | 'otp';
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const { login } = useAuth();
 
     const [step, setStep] = useState<Step>('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
@@ -30,25 +29,17 @@ export default function LoginPage() {
         }
     }, [countdown]);
 
-    const formatPhoneNumber = (phone: string) => {
-        return phone;
-    };
-
-    const handleSendOtp = async (e: FormEvent) => {
+    const handleSendOtp = (e: FormEvent) => {
         e.preventDefault();
         if (!phoneNumber || phoneNumber.length < 11) {
             toast.error('لطفا شماره موبایل معتبر وارد کنید');
             return;
         }
-        const formattedPhone = formatPhoneNumber(phoneNumber);
-        requestOtpMutation.mutate(formattedPhone, {
+        requestOtpMutation.mutate(phoneNumber, {
             onSuccess: () => {
                 setStep('otp');
                 setCountdown(120);
                 toast.success('کد تایید ارسال شد');
-            },
-            onError: (error: any) => {
-                toast.error(error.response?.data?.message || 'خطا در ارسال کد تایید');
             },
         });
     };
@@ -69,18 +60,17 @@ export default function LoginPage() {
         }
     };
 
-    const handleVerifyOtp = async (e: FormEvent) => {
+    const handleVerifyOtp = (e: FormEvent) => {
         e.preventDefault();
         const code = otp.join('');
         if (code.length !== 4) {
             toast.error('لطفا کد ۴ رقمی را کامل وارد کنید');
             return;
         }
-        const formattedPhone = formatPhoneNumber(phoneNumber);
         verifyOtpMutation.mutate(
-            { phoneNumber: formattedPhone, code },
+            { phoneNumber, code },
             {
-                onSuccess: async (result) => {
+                onSuccess: () => {
                     gymOwnerDataMutation.mutate(undefined, {
                         onSuccess: (data) => {
                             localStorage.setItem('gymOwner', JSON.stringify(data));
@@ -88,13 +78,11 @@ export default function LoginPage() {
                             navigate('/dashboard');
                         },
                         onError: () => {
-                            // Even if profile fetch fails, user is logged in
                             navigate('/dashboard');
                         },
                     });
                 },
-                onError: (error: any) => {
-                    toast.error(error.response?.data?.message || 'کد تایید نادرست است');
+                onError: () => {
                     setOtp(['', '', '', '']);
                     otpRefs.current[0]?.focus();
                 },
@@ -104,15 +92,11 @@ export default function LoginPage() {
 
     const handleResendOtp = () => {
         if (countdown > 0) return;
-        const formattedPhone = formatPhoneNumber(phoneNumber);
-        requestOtpMutation.mutate(formattedPhone, {
+        requestOtpMutation.mutate(phoneNumber, {
             onSuccess: () => {
                 setCountdown(120);
                 setOtp(['', '', '', '']);
                 toast.success('کد تایید مجددا ارسال شد');
-            },
-            onError: (error: any) => {
-                toast.error(error.response?.data?.message || 'خطا در ارسال مجدد کد');
             },
         });
     };
@@ -126,54 +110,35 @@ export default function LoginPage() {
     const isLoading = requestOtpMutation.isPending || verifyOtpMutation.isPending || gymOwnerDataMutation.isPending;
 
     return (
-        <div className="flex min-h-screen" dir="rtl">
-            {/* Form Side */}
-            <div className="flex-1 flex flex-col items-center justify-center px-10 py-10 bg-gradient-to-b from-[#f0ebf8] via-[#e8e2f4] to-[#ddd6ee]">
-                {/* Logo */}
-                <Logo size={48} className="mb-10" textClassName="text-2xl font-bold text-primary-700 tracking-tight" />
+        <div className="flex min-h-screen py-8 bg-[linear-gradient(180deg,#FFFFFF_0%,#E0D9FF_100%)]" dir="rtl">
+            <div className="flex-1 flex flex-col items-center justify-center px-10">
+                <Logo size={48} className="mb-10" textClassName="text-2xl font-bold text-gray-800 tracking-tight" />
 
-                {/* Card */}
-                <div className="w-full max-w-[450px] bg-white rounded-2xl px-9 py-10 shadow-lg animate-[slideUp_0.5s_ease-out]">
+                <div className="w-full max-w-[450px] bg-white rounded-2xl px-9 py-10 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
                     {step === 'phone' ? (
                         <>
-                            {/* Tabs */}
-                            <div className="flex items-center justify-center gap-2 mb-9 text-[15px]">
-                                <span
-                                    className={`px-4 py-1.5 rounded-md cursor-pointer font-medium transition-colors`}
-                                >
-                                    ورود | ثبت نام
-                                </span>
-
+                            <div className="mb-9 text-center">
+                                <h1 className="text-base text-gray-900">ورود | ثبت نام</h1>
+                                <span className="mx-auto mt-2 block h-1 w-10 rounded-full bg-[linear-gradient(90deg,#94D7D1_0%,#6AB1C7_25%,#79A1D6_50%,#8C91E7_75%,#D6C9FB_100%)]" />
                             </div>
 
                             <form onSubmit={handleSendOtp}>
-                                <div className="mb-6">
-                                    <label className="block text-right text-[13px] font-semibold text-gray-900 mb-2">
-                                        شماره موبایل
-                                    </label>
-                                    <input
+                                <div className="mb-8">
+                                    <Input
                                         id="phone-input"
+                                        label="شماره موبایل"
                                         type="tel"
-                                        className="w-full px-4 py-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm text-gray-900 bg-white transition-all duration-250 placeholder:text-gray-400 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/10 outline-none"
                                         placeholder="شماره موبایل"
                                         value={phoneNumber}
                                         onChange={(e: ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
                                         autoComplete="tel"
                                         dir="ltr"
-                                        style={{ textAlign: 'right' }}
                                     />
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-7 flex-row-reverse justify-end">
-                                    <input type="checkbox" id="remember" className="w-4 h-4 accent-primary-500 cursor-pointer" />
-                                    <label htmlFor="remember" className="text-[13px] text-gray-500 cursor-pointer">
-                                        مرا به خاطر بسپار
-                                    </label>
                                 </div>
 
                                 <button
                                     type="submit"
-                                    className="w-full py-3.5 bg-gradient-to-br from-primary-400 to-primary-500 text-white rounded-[10px] text-[15px] font-semibold cursor-pointer transition-all duration-250 hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_4px_15px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:translate-y-0"
+                                    className="w-full py-3.5 bg-[#997CDE] text-white rounded-xl text-[15px] font-semibold cursor-pointer transition-colors hover:bg-[#8B6DD4] disabled:opacity-70 disabled:cursor-not-allowed"
                                     disabled={isLoading}
                                     id="send-otp-btn"
                                 >
@@ -186,8 +151,9 @@ export default function LoginPage() {
                             </form>
                         </>
                     ) : (
-                        <div className="animate-[slideUp_0.4s_ease-out]">
+                        <>
                             <button
+                                type="button"
                                 className="flex items-center gap-1.5 text-[13px] text-primary-500 cursor-pointer mb-5 py-1 transition-colors hover:text-primary-700"
                                 onClick={() => { setStep('phone'); setOtp(['', '', '', '']); }}
                             >
@@ -199,7 +165,7 @@ export default function LoginPage() {
                                 کد تایید ارسال شده به شماره زیر را وارد کنید
                             </p>
                             <p className="text-sm font-semibold text-primary-600 text-center mb-7" dir="ltr">
-                                {formatPhoneNumber(phoneNumber)}
+                                {phoneNumber}
                             </p>
 
                             <form onSubmit={handleVerifyOtp}>
@@ -211,7 +177,7 @@ export default function LoginPage() {
                                             type="text"
                                             inputMode="numeric"
                                             maxLength={1}
-                                            className="w-[52px] h-14 text-center text-[22px] font-bold border-[1.5px] border-gray-200 rounded-[10px] bg-white transition-all duration-250 text-primary-700 focus:border-primary-400 focus:ring-[3px] focus:ring-primary-400/15 outline-none"
+                                            className="w-[52px] h-14 text-center text-[22px] font-bold border-[1.5px] border-gray-200 rounded-[10px] bg-white text-primary-700 transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 outline-none"
                                             value={digit}
                                             onChange={(e) => handleOtpChange(index, e.target.value)}
                                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
@@ -223,7 +189,7 @@ export default function LoginPage() {
 
                                 <button
                                     type="submit"
-                                    className="w-full py-3.5 bg-gradient-to-br from-primary-400 to-primary-500 text-white rounded-[10px] text-[15px] font-semibold cursor-pointer transition-all duration-250 hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_4px_15px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed disabled:translate-y-0"
+                                    className="w-full py-3.5 bg-[#997CDE] text-white rounded-xl text-[15px] font-semibold cursor-pointer transition-colors hover:bg-[#8B6DD4] disabled:opacity-70 disabled:cursor-not-allowed"
                                     disabled={isLoading || otp.join('').length !== 4}
                                     id="verify-otp-btn"
                                 >
@@ -242,6 +208,7 @@ export default function LoginPage() {
                                     </p>
                                 ) : (
                                     <button
+                                        type="button"
                                         className="text-[13px] text-primary-500 cursor-pointer transition-colors font-medium hover:text-primary-700 disabled:text-gray-400 disabled:cursor-not-allowed"
                                         onClick={handleResendOtp}
                                         disabled={isLoading}
@@ -250,19 +217,18 @@ export default function LoginPage() {
                                     </button>
                                 )}
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
             </div>
 
-            {/* Image Side */}
-            <div className="flex-1 max-w-[50%] relative overflow-hidden max-md:hidden">
+            <div className="flex-1 max-w-[50%] relative overflow-hidden rounded-tr-[80px] rounded-br-[80px] max-md:hidden">
                 <img
                     src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"
                     alt="Gym"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/15 to-black/20" />
+                <div className="absolute inset-0 bg-black/15" />
             </div>
         </div>
     );

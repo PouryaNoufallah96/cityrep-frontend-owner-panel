@@ -6,9 +6,9 @@ import {
     HiOutlineArrowRight,
     HiOutlinePhotograph,
     HiOutlineLocationMarker,
+    HiOutlineOfficeBuilding,
 } from 'react-icons/hi';
 import { BsGrid } from 'react-icons/bs';
-import { IoDocumentTextOutline } from 'react-icons/io5';
 
 import { useAddGym, useGymTrends } from '../../hooks/useGym';
 import { useAuth } from '../../context/AuthContext';
@@ -17,39 +17,40 @@ import type { AddGymPayload } from '../../services/gymService';
 import Sidebar from '../../components/layout/Sidebar';
 import PageHeader from '../../components/layout/PageHeader';
 
-// Child components & Types
 import type { GymFormData } from './types';
 import RegisterStepper from './components/RegisterStepper';
 import GymInfoStep from './components/GymInfoStep';
 import SportTrendsStep from './components/SportTrendsStep';
 import LocationStep from './components/LocationStep';
 import GymImagesStep from './components/GymImagesStep';
+import RegisterSuccess from './components/RegisterSuccess';
 
 const STEPS = [
-    { id: 0, label: 'اطلاعات باشگاه', icon: IoDocumentTextOutline },
+    { id: 0, label: 'اطلاعات باشگاه', icon: HiOutlineOfficeBuilding },
     { id: 1, label: 'رشته های ورزشی', icon: BsGrid },
     { id: 2, label: 'لوکیشن', icon: HiOutlineLocationMarker },
     { id: 3, label: 'تصاویر باشگاه', icon: HiOutlinePhotograph },
 ];
 
 const SPORT_TRENDS_FALLBACK = [
-    { gymTrendId: '1', title: 'فیتنس', iconUrl: '🏋️' },
-    { gymTrendId: '2', title: 'بدنسازی', iconUrl: '💪' },
-    { gymTrendId: '3', title: 'پیلاتس', iconUrl: '🧘' },
-    { gymTrendId: '4', title: 'پیلاتس ریفرمر', iconUrl: '🤸' },
-    { gymTrendId: '5', title: 'آمادگی جسمانی', iconUrl: '🏃' },
-    { gymTrendId: '6', title: 'ایریال یوگا', iconUrl: '🧘‍♀️' },
-    { gymTrendId: '7', title: 'یوگا', iconUrl: '⚡' },
-    { gymTrendId: '8', title: 'آکرو یوگا', iconUrl: '⚡' },
-    { gymTrendId: '9', title: 'تمرینات قدرتی', iconUrl: '🏋️‍♂️' },
-    { gymTrendId: '10', title: 'کششی', iconUrl: '🤸‍♂️' },
-    { gymTrendId: '11', title: 'کراس فیت', iconUrl: '🏅' },
+    { gymTrendId: '1', title: 'فیتنس', iconKey: 'fitness' },
+    { gymTrendId: '2', title: 'بدنسازی', iconKey: 'bodybuilding' },
+    { gymTrendId: '3', title: 'پیلاتس', iconKey: 'pilates' },
+    { gymTrendId: '4', title: 'پیلاتس ریفرمر', iconKey: 'reformer' },
+    { gymTrendId: '5', title: 'آمادگی جسمانی', iconKey: 'physical' },
+    { gymTrendId: '6', title: 'ایریال یوگا', iconKey: 'aerial' },
+    { gymTrendId: '8', title: 'آکرو یوگا', iconKey: 'acro' },
+    { gymTrendId: '7', title: 'یوگا', iconKey: 'yoga' },
+    { gymTrendId: '10', title: 'کششی', iconKey: 'stretch' },
+    { gymTrendId: '9', title: 'تمرینات قدرتی', iconKey: 'strength' },
+    { gymTrendId: '11', title: 'کراس فیت', iconKey: 'crossfit' },
 ];
 
 export default function RegisterPage() {
     const navigate = useNavigate();
-    const { recheckGyms } = useAuth();
+    const { setHasGym, recheckGyms } = useAuth();
     const [currentStep, setCurrentStep] = useState(0);
+    const [isSuccess, setIsSuccess] = useState(false);
     const [formData, setFormData] = useState<GymFormData>({
         title: '',
         phoneNumber: '',
@@ -57,8 +58,8 @@ export default function RegisterPage() {
         address: '',
         description: '',
         selectedTrends: [],
-        latitude: null,
-        longitude: null,
+        latitude: 35.6892,
+        longitude: 51.389,
         images: [],
     });
 
@@ -68,7 +69,7 @@ export default function RegisterPage() {
     const trends = trendsData?.length
         ? trendsData.map((t: any) => ({
             ...t,
-            iconUrl: t.iconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.iconUrl}` : (t.iconUrl || '🏋️')
+            iconUrl: t.iconUrl ? `${import.meta.env.VITE_BASE_API}/File/DownloadFile/${t.iconUrl}` : t.iconUrl,
         }))
         : SPORT_TRENDS_FALLBACK;
 
@@ -128,7 +129,6 @@ export default function RegisterPage() {
 
     const handleSubmit = async () => {
         try {
-            // Upload images first
             const uploadedImages = await Promise.all(
                 formData.images
                     .filter((img) => img.file)
@@ -158,10 +158,8 @@ export default function RegisterPage() {
             };
 
             addGymMutation.mutate(payload, {
-                onSuccess: async () => {
-                    await recheckGyms();
-                    toast.success('باشگاه با موفقیت ثبت شد');
-                    navigate('/dashboard');
+                onSuccess: () => {
+                    setIsSuccess(true);
                 },
                 onError: (error: any) => {
                     toast.error(error.response?.data?.message || 'خطا در ثبت باشگاه');
@@ -172,9 +170,14 @@ export default function RegisterPage() {
         }
     };
 
+    const handleGoToSchedule = () => {
+        setHasGym(null);
+        navigate('/schedule');
+        recheckGyms();
+    };
+
     const isSubmitting = addGymMutation.isPending;
 
-    // Mapping step indices to cleaner functional components
     const renderStepContent = () => {
         switch (currentStep) {
             case 0:
@@ -191,58 +194,60 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="flex min-h-screen" dir="rtl">
+        <div className="flex min-h-screen bg-gray-50" dir="rtl">
             <Sidebar />
 
-            <div className="flex-1 flex flex-col bg-gray-50">
-
-
-                <main className="flex-1 p-8 max-sm:p-4 overflow-y-auto">
-                    <div className="max-w-[1200px] mx-auto flex flex-col gap-6 items-center">
-
-                        {/* Top Header Card */}
+            <div className="flex-1 flex flex-col min-w-0">
+                <main className="flex-1 p-6 max-sm:p-4 overflow-y-auto">
+                    <div className="max-w-[1200px] mx-auto flex flex-col gap-4">
                         <PageHeader title="حساب کاربری" />
 
-                        {/* Content Card */}
-                        <div className="w-full max-w-[650px] bg-white rounded-2xl p-10 shadow-sm animate-[fadeIn_0.4s_ease-out] max-sm:p-6 mb-auto border border-gray-100 min-h-[calc(100vh-220px)]">
+                        <div className="w-full bg-white rounded-2xl px-10 py-8 max-sm:px-5 max-sm:py-6 border border-gray-100 min-h-[calc(100vh-180px)] flex flex-col">
+                            {isSuccess ? (
+                                <RegisterSuccess onSchedule={handleGoToSchedule} />
+                            ) : (
+                                <>
+                                    <h1 className="text-center text-[17px] font-bold text-gray-900 mb-1.5">ثبت نام باشگاه</h1>
+                                    <p className="text-center text-[13px] text-gray-500 mb-8">لطفا جهت ثبت نام اطلاعات خواسته شده را وارد کنید.</p>
 
-                            <h1 className="text-center text-lg font-bold text-gray-900 mb-2">ثبت نام باشگاه</h1>
-                            <p className="text-center text-[13px] text-gray-500 mb-9">لطفا جهت ثبت نام اطلاعات خواسته شده را وارد کنید.</p>
+                                    <RegisterStepper steps={STEPS} currentStep={currentStep} />
 
-                            <RegisterStepper steps={STEPS} currentStep={currentStep} />
+                                    <div className="flex-1">
+                                        {renderStepContent()}
+                                    </div>
 
-                            <div className="min-h-[250px]">
-                                {renderStepContent()}
-                            </div>
+                                    <div className="flex items-center justify-between mt-8 gap-4">
+                                        {currentStep > 0 ? (
+                                            <button
+                                                type="button"
+                                                onClick={handlePrevious}
+                                                className="flex items-center gap-2 h-11 px-6 bg-white text-gray-500 border border-[#D0D0D0] rounded-full text-sm font-medium cursor-pointer transition-colors hover:border-gray-400 hover:text-gray-800"
+                                            >
+                                                <HiOutlineArrowRight size={18} />
+                                                قبلی
+                                            </button>
+                                        ) : (
+                                            <span />
+                                        )}
 
-                            <div className="flex items-center justify-between mt-9 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
-                                    disabled={isSubmitting}
-                                    className="flex items-center gap-2 px-8 py-3 bg-gradient-to-br from-primary-400 to-primary-500 text-white rounded-[10px] text-sm font-semibold cursor-pointer transition-all duration-250 hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_4px_15px_rgba(124,77,255,0.35)] hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
-                                >
-                                    {isSubmitting ? (
-                                        <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        <>
-                                            {currentStep === STEPS.length - 1 ? 'ثبت باشگاه' : 'بعدی'}
-                                            <HiOutlineArrowLeft />
-                                        </>
-                                    )}
-                                </button>
-
-                                {currentStep > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={handlePrevious}
-                                        className="flex items-center gap-2 px-6 py-3 bg-transparent text-gray-500 border-[1.5px] border-gray-300 rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-200 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50"
-                                    >
-                                        <HiOutlineArrowRight />
-                                        قبلی
-                                    </button>
-                                )}
-                            </div>
+                                        <button
+                                            type="button"
+                                            onClick={currentStep === STEPS.length - 1 ? handleSubmit : handleNext}
+                                            disabled={isSubmitting}
+                                            className="flex items-center gap-2 h-11 px-8 bg-[#3C25C9] text-white rounded-full text-sm font-semibold cursor-pointer transition-colors hover:bg-[#3220A8] disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? (
+                                                <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <>
+                                                    بعدی
+                                                    <HiOutlineArrowLeft size={18} />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </main>
