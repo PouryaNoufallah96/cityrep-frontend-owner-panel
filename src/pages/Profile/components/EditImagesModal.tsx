@@ -36,6 +36,7 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
         if (imageToDelete !== null) {
             setImages(prev => prev.filter((_, i) => i !== imageToDelete));
             setImageToDelete(null);
+            toast.success('حذف تصویر باشگاه با موفقیت انجام شد.');
         }
     };
 
@@ -47,13 +48,12 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
         try {
             const uploadedUrls: string[] = [];
             for (let i = 0; i < files.length; i++) {
-                const fileName = await fileService.uploadFile(files[i], "profile");
+                const fileName = await fileService.uploadFile(files[i], 'profile');
                 uploadedUrls.push(fileService.getFileUrl(fileName));
+                toast.success('افزودن تصویر باشگاه با موفقیت انجام شد.');
             }
             setImages(prev => [...prev, ...uploadedUrls]);
-            toast.success('تصاویر با موفقیت آپلود شدند');
-        } catch (error) {
-            toast.error('خطا در آپلود تصاویر');
+        } catch {
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -62,7 +62,6 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
         }
     };
 
-    // Extract filename from full URL for API payload
     const extractFileName = (url: string) => {
         const parts = url.split('/DownloadFile/');
         return parts.length > 1 ? parts[1] : url;
@@ -80,11 +79,7 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
         editMutation.mutate(payload, {
             onSuccess: () => {
                 onSave(images);
-                toast.success('تصاویر باشگاه با موفقیت ویرایش شد');
                 onClose();
-            },
-            onError: (error: any) => {
-                toast.error(error.response?.data?.message || 'خطا در ویرایش تصاویر');
             },
         });
     };
@@ -92,35 +87,30 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" dir="rtl">
             <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden flex flex-col relative animate-[scaleIn_0.2s_ease-out] p-6 pb-8">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex-1 flex justify-center">
-                        <h3 className="text-[16px] font-bold text-gray-800">ویرایش تصویر باشگاه</h3>
-                    </div>
-                    <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors absolute left-4 top-4">
+                <div className="relative mb-6">
+                    <h3 className="text-[16px] font-bold text-gray-800 text-right pl-10">ویرایش تصویر باشگاه</h3>
+                    <button type="button" onClick={onClose} className="absolute left-0 top-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
                         <LuX size={20} />
                     </button>
                 </div>
 
-                {/* Add Image Button */}
                 <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="w-full h-[60px] border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-3 text-gray-600 hover:bg-gray-50 transition-colors mb-6 cursor-pointer outline-none disabled:opacity-50 disabled:cursor-wait"
+                    className="w-full h-[60px] border border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2.5 text-gray-600 hover:bg-gray-50 transition-colors mb-6 cursor-pointer outline-none disabled:opacity-50 disabled:cursor-wait bg-white"
                 >
                     {isUploading ? (
                         <>
-                            <span className="text-[14px] font-medium font-bold">در حال آپلود...</span>
-                            <div className="text-primary-500 animate-spin">
-                                <LuLoader size={18} />
-                            </div>
+                            <LuLoader size={18} className="text-primary-500 animate-spin" />
+                            <span className="text-[14px] font-medium">در حال آپلود...</span>
                         </>
                     ) : (
                         <>
-                            <span className="text-[14px] font-medium font-bold">تصویر باشگاه</span>
-                            <div className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-gray-400">
+                            <span className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center text-gray-400 shrink-0">
                                 <LuPlus size={14} />
-                            </div>
+                            </span>
+                            <span className="text-[14px] font-medium text-gray-600">تصویر باشگاه</span>
                         </>
                     )}
                 </button>
@@ -133,44 +123,42 @@ export default function EditImagesModal({ isOpen, onClose, gymId, images: initia
                     onChange={handleImageUpload}
                 />
 
-                {/* Images Grid */}
-                <div className="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-1 pb-2">
+                <div className="grid grid-cols-2 gap-4 max-h-[300px] overflow-y-auto custom-scrollbar pb-2">
                     {images.map((img, index) => (
-                        <div key={index} className="relative aspect-[4/3] rounded-xl overflow-hidden shadow-sm group">
-                            <img src={img} alt={`Gym ${index}`} className="w-full h-full object-cover" />
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-gray-900/80 to-transparent pointer-events-none"></div>
-
-                            {/* Trash Icon */}
+                        <div key={index} className="relative aspect-[4/3] rounded-xl overflow-hidden">
+                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/30 pointer-events-none" />
                             <button
+                                type="button"
                                 onClick={() => handleDelete(index)}
-                                className="absolute bottom-3 right-3 text-white hover:text-red-400 p-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-md transition-all z-10"
+                                className="absolute bottom-2.5 right-2.5 w-9 h-9 rounded-full bg-white/90 text-gray-700 flex items-center justify-center hover:bg-white transition-colors z-10 shadow-sm"
+                                aria-label="حذف تصویر"
                             >
-                                <LuTrash2 size={18} />
+                                <LuTrash2 size={16} />
                             </button>
                         </div>
                     ))}
                 </div>
 
-                {/* Footer Buttons */}
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-3 mt-8">
                     <button
-                        onClick={handleSave}
-                        disabled={editMutation.isPending}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors disabled:opacity-50"
-                    >
-                        {editMutation.isPending ? 'در حال ذخیره...' : 'ثبت تغییرات'}
-                    </button>
-                    <button
+                        type="button"
                         onClick={onClose}
-                        className="flex-1 h-[48px] bg-white border-2 border-gray-200 text-gray-700 rounded-[12px] text-[14px] font-bold hover:bg-gray-50 transition-colors"
+                        className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-full text-[13px] font-bold hover:bg-gray-50 transition-colors"
                     >
                         انصراف
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={editMutation.isPending}
+                        className="flex-1 py-3 bg-primary-500 text-white rounded-full text-[13px] font-bold hover:bg-primary-600 transition-colors disabled:opacity-50"
+                    >
+                        {editMutation.isPending ? 'در حال ذخیره...' : 'ثبت تغییرات'}
                     </button>
                 </div>
             </div>
 
-            {/* Nested Confirmation Modal */}
             <ConfirmModal
                 isOpen={imageToDelete !== null}
                 onClose={() => setImageToDelete(null)}

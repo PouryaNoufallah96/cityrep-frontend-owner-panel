@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-import { LuPen, LuBuilding2, LuPhone, LuMapPin, LuUser, LuPlus } from 'react-icons/lu';
+import { LuPen, LuBuilding2, LuPhone, LuMapPin, LuUser, LuPlus, LuEllipsis, LuMaximize2 } from 'react-icons/lu';
 import Sidebar from '../../components/layout/Sidebar';
 import PageHeader from '../../components/layout/PageHeader';
 import NeshanMap from '../../components/NeshanMap';
@@ -10,42 +10,31 @@ import EditImagesModal from './components/EditImagesModal';
 
 import { useGyms, useToggleGymActivityTrend } from '../../hooks/useGym';
 import { fileService } from '../../services/fileService';
+import { toPersianDigits } from '../../utils/format';
+
+const cardClass = 'bg-white rounded-2xl border border-gray-100 p-6';
+const editBtnClass =
+    'w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shrink-0';
+const infoIconClass =
+    'w-11 h-11 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0';
+
+function displayGymName(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return '—';
+    return trimmed.startsWith('باشگاه') ? trimmed : `باشگاه ${trimmed}`;
+}
 
 export default function ProfilePage() {
-    const { data: gymsResponse } = useGyms();
+    const { data: gymsResponse, isPending, isError } = useGyms();
     const gym = gymsResponse?.data?.data?.[0];
+    const gymId = gym?.gymId ?? '';
 
     const [sportsStatus, setSportsStatus] = useState<{ id: string | number, name: string, isActive: boolean }[]>([]);
-
-    useEffect(() => {
-        if (gym?.trends?.length && !sportsStatus.length) {
-            setSportsStatus(gym.trends.map((t) => ({ id: t.gymTrendId, name: t.title, isActive: t.isActive })));
-        }
-    }, [gym]);
-
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
-
     const [gymImages, setGymImages] = useState<string[]>([]);
-
-    useEffect(() => {
-        if (gym?.images?.length && !gymImages.length) {
-            setGymImages(gym.images.map((img: any) => fileService.getFileUrl(img.imageUrl || img)));
-        }
-    }, [gym]);
-
     const [gymLocation, setGymLocation] = useState({ lat: 35.6892, lng: 51.389 });
-
-    useEffect(() => {
-        if (gym?.address?.geoLocation) {
-            setGymLocation({
-                lat: gym.address.geoLocation.latitude,
-                lng: gym.address.geoLocation.longitude,
-            });
-        }
-    }, [gym]);
-
     const [gymInfo, setGymInfo] = useState<{
         name: string;
         phone: string;
@@ -55,18 +44,35 @@ export default function ProfilePage() {
         name: '',
         phone: '',
         supportedGender: [],
-        address: ''
+        address: '',
     });
 
     useEffect(() => {
-        if (gym && !gymInfo.name) {
-            setGymInfo({
-                name: gym.title || '',
-                phone: gym.contact?.phoneNumber || '',
-                supportedGender: gym.supportedGender || [],
-                address: gym.address?.address || '',
+        if (!gym) return;
+
+        setSportsStatus(
+            (gym.trends || []).map((t) => ({ id: t.gymTrendId, name: t.title, isActive: t.isActive }))
+        );
+
+        setGymImages(
+            (gym.images || []).map((img: { imageUrl?: string } | string) =>
+                fileService.getFileUrl(typeof img === 'string' ? img : (img.imageUrl || ''))
+            )
+        );
+
+        if (gym.address?.geoLocation) {
+            setGymLocation({
+                lat: gym.address.geoLocation.latitude,
+                lng: gym.address.geoLocation.longitude,
             });
         }
+
+        setGymInfo({
+            name: gym.title || '',
+            phone: gym.contact?.phoneNumber || '',
+            supportedGender: gym.supportedGender || [],
+            address: gym.address?.address || '',
+        });
     }, [gym]);
 
     const getGenderLabel = (genders: string[]) => {
@@ -81,19 +87,37 @@ export default function ProfilePage() {
     const toggleSport = (id: string | number) => {
         if (!gym?.gymId) return;
 
-        // Optimistically update the state
         setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
 
         toggleGymActivityTrendMutation.mutate(
             { gymId: gym.gymId, gymTrendId: String(id) },
             {
                 onError: () => {
-                    // Revert state if error
                     setSportsStatus(prev => prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s));
-                }
+                },
             }
         );
     };
+
+    const openInfoModal = () => { if (gymId) setIsInfoModalOpen(true); };
+    const openLocationModal = () => { if (gymId) setIsLocationModalOpen(true); };
+    const openImagesModal = () => { if (gymId) setIsImagesModalOpen(true); };
+
+    if (isPending) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <span className="inline-block w-8 h-8 border-[3px] border-primary-200 border-t-primary-500 rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 text-[14px] font-medium text-gray-500">
+                خطا در دریافت اطلاعات
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 flex" dir="rtl">
@@ -101,123 +125,163 @@ export default function ProfilePage() {
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <main className="flex-1 overflow-y-auto p-8 max-sm:p-4 bg-gray-50/50">
-                    <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
+                    <div className="max-w-[1200px] mx-auto flex flex-col gap-5">
 
-                        {/* Top Header Card */}
                         <PageHeader title="حساب کاربری" />
 
-                        {/* Middle Cards (Location & Images) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* Gym Location Card */}
-                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-[15px] font-bold text-gray-800">موقعیت مکانی باشگاه</h2>
-                                    <button onClick={() => setIsLocationModalOpen(true)} className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-                                        <LuPen size={18} />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            <div className={`${cardClass} flex flex-col`}>
+                                <div className="flex items-center justify-between mb-5">
+                                    <h2 className="text-[15px] font-bold text-gray-800">تصویر باشگاه</h2>
+                                    <button type="button" onClick={openImagesModal} className={editBtnClass}>
+                                        <LuPen size={16} />
                                     </button>
                                 </div>
-                                <div className="flex-1 min-h-[220px] rounded-xl bg-gray-100 relative overflow-hidden flex items-center justify-center border border-gray-200 cursor-pointer" onClick={() => setIsLocationModalOpen(true)}>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {gymImages.slice(0, 3).map((img, index, arr) => (
+                                        <div
+                                            key={index}
+                                            onClick={openImagesModal}
+                                            className="aspect-square rounded-xl overflow-hidden relative cursor-pointer bg-gray-100"
+                                        >
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                            {gymImages.length > 3 && index === arr.length - 1 && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                    <div className="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center text-white">
+                                                        <LuEllipsis size={20} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {Array.from({ length: Math.max(0, 3 - gymImages.length) }).map((_, i) => (
+                                        <div
+                                            key={`empty-${i}`}
+                                            onClick={openImagesModal}
+                                            className="aspect-square rounded-xl bg-[#FAFAFA] border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:bg-gray-50 transition-colors"
+                                        >
+                                            <LuPlus size={22} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className={`${cardClass} flex flex-col`}>
+                                <div className="flex items-center justify-between mb-5">
+                                    <h2 className="text-[15px] font-bold text-gray-800">موقعیت مکانی باشگاه</h2>
+                                    <button type="button" onClick={openLocationModal} className={editBtnClass}>
+                                        <LuPen size={16} />
+                                    </button>
+                                </div>
+                                <div
+                                    className="flex-1 min-h-[168px] rounded-xl bg-gray-100 relative overflow-hidden cursor-pointer"
+                                    onClick={openLocationModal}
+                                >
                                     <div className="absolute inset-0 z-0">
                                         <NeshanMap
                                             latitude={gymLocation.lat}
                                             longitude={gymLocation.lng}
                                             onLocationChange={() => { }}
                                             height="100%"
-                                            readOnly={true}
+                                            readOnly
+                                            hideSearch
+                                            hideCoordinates
+                                            markerColor="primary"
                                         />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Gym Images Card */}
-                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-[15px] font-bold text-gray-800">تصویر باشگاه</h2>
-                                    <button onClick={() => setIsImagesModalOpen(true)} className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-                                        <LuPen size={18} />
-                                    </button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    {gymImages.slice(0, 3).map((img, index) => (
-                                        <div key={index} onClick={() => setIsImagesModalOpen(true)} className="aspect-square rounded-xl overflow-hidden shadow-sm relative group cursor-pointer">
-                                            <img src={img} alt={`Gym Image ${index}`} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <div className="flex gap-1">
-                                                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                                                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                                                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                                                </div>
-                                            </div>
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                                        <div className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 text-gray-600 flex items-center justify-center">
+                                            <LuMaximize2 size={16} />
                                         </div>
-                                    ))}
-                                    {Array.from({ length: Math.max(0, 3 - gymImages.length) }).map((_, i) => (
-                                        <div key={`empty-${i}`} onClick={() => setIsImagesModalOpen(true)} className="aspect-square rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-gray-400 cursor-pointer hover:bg-gray-100 transition-colors">
-                                            <LuPlus size={24} />
-                                        </div>
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Gym Info Bar */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between w-full gap-4 flex-wrap">
-                            <div className="flex items-center gap-8 flex-wrap flex-1">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
-                                        <LuBuilding2 size={22} />
+                        <div className={`${cardClass} flex items-center gap-4`}>
+                            <div className="flex items-center gap-6 lg:gap-8 flex-wrap flex-1 min-w-0">
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <div className={infoIconClass}>
+                                        <LuBuilding2 size={20} />
                                     </div>
-                                    <span className="text-[14px] font-bold text-gray-800">{gymInfo.name}</span>
+                                    <span className="text-[14px] font-medium text-gray-800 whitespace-nowrap">
+                                        {displayGymName(gymInfo.name)}
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
-                                        <LuUser size={22} />
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <div className={infoIconClass}>
+                                        <LuUser size={20} />
                                     </div>
-                                    <span className="text-[14px] font-medium text-gray-700">مخصوص {getGenderLabel(gymInfo.supportedGender)}</span>
+                                    <span className="text-[14px] font-medium text-gray-800 whitespace-nowrap">
+                                        مخصوص {getGenderLabel(gymInfo.supportedGender)}
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
-                                        <LuPhone size={22} />
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <div className={infoIconClass}>
+                                        <LuPhone size={20} />
                                     </div>
-                                    <span className="text-[14px] font-medium text-gray-700 font-mono mt-1" dir="ltr">{gymInfo.phone}</span>
+                                    <span className="text-[14px] font-medium text-gray-800 whitespace-nowrap" dir="ltr">
+                                        {toPersianDigits(gymInfo.phone || '—')}
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-3 flex-1">
-                                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center shrink-0">
-                                        <LuMapPin size={22} />
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className={infoIconClass}>
+                                        <LuMapPin size={20} />
                                     </div>
-                                    <span className="text-[13px] font-medium text-gray-600 leading-relaxed max-w-sm truncate">
-                                        {gymInfo.address}
+                                    <span className="text-[14px] font-medium text-gray-800 leading-6 line-clamp-2">
+                                        {gymInfo.address || '—'}
                                     </span>
                                 </div>
                             </div>
-                            <button onClick={() => setIsInfoModalOpen(true)} className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shrink-0">
-                                <LuPen size={18} />
+
+                            <button type="button" onClick={openInfoModal} className={editBtnClass}>
+                                <LuPen size={16} />
                             </button>
                         </div>
 
-                        {/* Sports Disciplines */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                            <h2 className="text-[15px] font-bold text-gray-800 mb-6">رشته‌های ورزشی</h2>
+                        <div className={cardClass}>
+                            <h2 className="text-[15px] font-bold text-gray-800 mb-5">رشته‌های ورزشی</h2>
 
-                            <div className="w-full flex items-center justify-between bg-primary-50/50 rounded-xl px-6 py-4 mb-2">
-                                <span className="text-[13px] font-medium text-gray-600">نام رشته</span>
-                                <span className="text-[13px] font-medium text-gray-600 pl-4">وضعیت</span>
+                            <div className="grid grid-cols-2 items-center bg-primary-50 rounded-xl px-6 py-3.5">
+                                <span className="text-[13px] font-medium text-gray-600 text-right">نام رشته</span>
+                                <span className="text-[13px] font-medium text-gray-600 text-center">وضعیت</span>
                             </div>
 
                             <div className="flex flex-col">
-                                {sportsStatus.map((sport, index) => (
-                                    <div key={sport.id} className={`flex items-center justify-between px-6 py-4 ${index !== sportsStatus.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                        <span className="text-[14px] font-medium text-gray-800">{sport.name}</span>
-
-                                        {/* Custom Toggle Switch */}
-                                        <button
-                                            onClick={() => toggleSport(sport.id)}
-                                            disabled={toggleGymActivityTrendMutation.isPending}
-                                            className={`w-[46px] h-6 rounded-full transition-colors duration-200 ease-in-out relative flex items-center shadow-inner ${sport.isActive ? 'bg-primary-600' : 'bg-gray-200'} ${toggleGymActivityTrendMutation.isPending ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
-                                        >
-                                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out absolute ${sport.isActive ? '-translate-x-[22px]' : 'translate-x-0'}`} style={{ right: '4px' }} />
-                                        </button>
+                                {sportsStatus.length === 0 ? (
+                                    <div className="px-6 py-10 text-center text-[13px] text-gray-400">
+                                        رشته‌ای ثبت نشده است
                                     </div>
-                                ))}
+                                ) : (
+                                    sportsStatus.map((sport, index) => (
+                                        <div
+                                            key={sport.id}
+                                            className={`grid grid-cols-2 items-center px-6 py-4 ${
+                                                index !== sportsStatus.length - 1 ? 'border-b border-gray-200/80' : ''
+                                            }`}
+                                        >
+                                            <span className="text-[14px] font-medium text-gray-800 text-right">
+                                                {sport.name}
+                                            </span>
+                                            <div className="flex justify-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleSport(sport.id)}
+                                                    disabled={toggleGymActivityTrendMutation.isPending}
+                                                    className={`w-[46px] h-6 rounded-full transition-colors duration-200 ease-in-out relative ${
+                                                        sport.isActive ? 'bg-primary-500' : 'bg-gray-200'
+                                                    } ${toggleGymActivityTrendMutation.isPending ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                >
+                                                    <div
+                                                        className={`w-4 h-4 rounded-full bg-white shadow-sm absolute top-1 transition-all duration-200 ease-in-out ${
+                                                            sport.isActive ? 'right-1' : 'right-[26px]'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
 
@@ -225,26 +289,25 @@ export default function ProfilePage() {
                 </main>
             </div>
 
-            {/* Modals */}
             <EditGymInfoModal
                 isOpen={isInfoModalOpen}
                 onClose={() => setIsInfoModalOpen(false)}
                 initialData={gymInfo}
-                gymId={gym?.gymId || ''}
+                gymId={gymId}
                 onSave={setGymInfo}
             />
             <EditLocationModal
                 isOpen={isLocationModalOpen}
                 onClose={() => setIsLocationModalOpen(false)}
                 initialLocation={gymLocation}
-                gymId={gym?.gymId || ''}
+                gymId={gymId}
                 onSave={(loc) => setGymLocation(loc)}
             />
             <EditImagesModal
                 isOpen={isImagesModalOpen}
                 onClose={() => setIsImagesModalOpen(false)}
                 images={gymImages}
-                gymId={gym?.gymId || ''}
+                gymId={gymId}
                 onSave={setGymImages}
             />
         </div>
