@@ -7,6 +7,9 @@ import StatusToggleModal, { type ClassItemData } from './components/StatusToggle
 import { useGymTrends, useGyms } from '../../hooks/useGym';
 import { scheduleService } from '../../services/scheduleService';
 import { toast } from 'react-toastify';
+import { getPageNumbers } from '../../utils/pagination';
+import { toPersianDigits, formatSessionTime } from '../../utils/format';
+import { thClass, tdClass } from '../../components/ui/tableStyles';
 
 const FILTER_OPTIONS = {
     day: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
@@ -18,21 +21,14 @@ const FILTER_OPTIONS = {
 const FILTER_MAPPINGS = {
     day: { 'شنبه': 'Saturday', 'یکشنبه': 'Sunday', 'دوشنبه': 'Monday', 'سه‌شنبه': 'Tuesday', 'چهارشنبه': 'Wednesday', 'پنج‌شنبه': 'Thursday', 'جمعه': 'Friday' },
     gender: { 'آقایان': 'Male', 'بانوان': 'Female' },
-    status: { 'فعال': 'Active', 'غیرفعال': 'InActive' }
+    status: { 'فعال': 'Active', 'غیرفعال': 'Deactive' }
 };
 
 const REVERSE_FILTER_MAPPINGS = {
     day: { 'Saturday': 'شنبه', 'Sunday': 'یکشنبه', 'Monday': 'دوشنبه', 'Tuesday': 'سه‌شنبه', 'Wednesday': 'چهارشنبه', 'Thursday': 'پنج‌شنبه', 'Friday': 'جمعه' },
     gender: { 'Male': 'آقایان', 'Female': 'بانوان', 'men': 'آقایان', 'women': 'بانوان', 'both': 'آقایان، بانوان' },
-    status: { 'Active': 'فعال', 'InActive': 'غیرفعال' }
+    status: { 'Active': 'فعال', 'Deactive': 'غیرفعال' }
 };
-
-const formatTime = (timeNum?: number | string) => {
-    if (timeNum === undefined || timeNum === null) return '';
-    const s = timeNum.toString().padStart(4, '0');
-    return `${s.slice(0, 2)}:${s.slice(2, 4)}`;
-};
-
 
 export default function ClassesPage() {
     const { data: gymsResponse } = useGyms();
@@ -48,7 +44,7 @@ export default function ClassesPage() {
         sport: dynamicSportOptions.length > 0 ? dynamicSportOptions : FILTER_OPTIONS.sport
     };
 
-    const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
     const [filters, setFilters] = useState<Record<string, string[]>>({
         day: ['همه'],
@@ -116,7 +112,7 @@ export default function ClassesPage() {
                 sport: item.gymTrendTitle || apiTrends.find((t: any) => t.gymTrendId === item.gymTrendId)?.title || '-',
                 gender: REVERSE_FILTER_MAPPINGS.gender[item.gender as keyof typeof REVERSE_FILTER_MAPPINGS.gender] || item.gender,
                 price: Number(item.price || 0).toLocaleString('fa-IR'),
-                time: item.from && item.to ? `${formatTime(item.from)} - ${formatTime(item.to)}` : 'تایم آزاد',
+                time: formatSessionTime(item.from, item.to),
                 reservations: item.reserveCount || 0,
                 isActive: item.activity === 'Active' || item.isActive === true
             }));
@@ -189,19 +185,19 @@ export default function ClassesPage() {
                 {isOpen && (
                     <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] py-2 z-50 max-h-[260px] overflow-y-auto custom-scrollbar animate-[fadeIn_0.15s_ease-out]">
                         {options.map(option => {
-                            const isSelected = filters[key].includes(option);
+                            const isSelected = filters[key].includes('همه') || filters[key].includes(option);
                             return (
                                 <div
                                     key={option}
                                     onClick={(e) => { e.stopPropagation(); toggleFilterItem(key, option); }}
-                                    className="flex items-center justify-between px-4 py-2 hover:bg-gray-50/80 cursor-pointer transition-colors"
+                                    className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors ${isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/80'}`}
                                 >
+                                    <div className={`w-[18px] h-[18px] rounded-[6px] border flex items-center justify-center transition-all shrink-0 ${isSelected ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white border-gray-300'}`}>
+                                        {isSelected && <BsCheck size={16} strokeWidth={0.5} />}
+                                    </div>
                                     <span className={`text-[13px] ${isSelected ? 'font-bold text-gray-800' : 'font-medium text-gray-600'}`}>
                                         {option}
                                     </span>
-                                    <div className={`w-[18px] h-[18px] rounded-[6px] border flex items-center justify-center transition-all ${isSelected ? 'bg-primary-500 border-primary-500 text-white shadow-sm' : 'bg-white border-gray-300'}`}>
-                                        {isSelected && <BsCheck size={16} strokeWidth={0.5} />}
-                                    </div>
                                 </div>
                             );
                         })}
@@ -232,7 +228,7 @@ export default function ClassesPage() {
                 c.id === cls.id ? { ...c, isActive: !c.isActive } : c
             ));
 
-            toast.success(`سانس با موفقیت ${cls.isActive ? 'غیرفعال' : 'فعال'} شد.`);
+            toast.success(`${cls.isActive ? 'غیرفعال' : 'فعال'} کردن ورزش ${cls.sport}، سانس روز ${cls.day} ساعت ${cls.time} با موفقیت انجام شد.`);
             setStatusModal({ isOpen: false, classData: null });
         } catch (err) {
             console.error(err);
@@ -242,6 +238,9 @@ export default function ClassesPage() {
         }
     };
 
+    const pageCount = Math.ceil(totalCount / size);
+    const pageNumbers = getPageNumbers(page, pageCount);
+
     return (
         <div className="min-h-screen bg-gray-50 flex" dir="rtl">
             <Sidebar />
@@ -249,32 +248,15 @@ export default function ClassesPage() {
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
 
 
-                {/* Main */}
                 <main className="flex-1 p-8 overflow-y-auto max-sm:p-4 bg-[#F8F9FB]">
                     <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
 
-                        {/* Top Header Card */}
                         <PageHeader title="لیست کلاس‌ها" />
 
-                        {/* Content Card */}
-                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[calc(100vh-220px)] flex flex-col relative">
+                        <div className="bg-white rounded-2xl p-6 border border-gray-100 min-h-[calc(100vh-220px)] flex flex-col relative">
 
-                            {/* Top Filters / Search Bar */}
                             <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
-                                <div className="flex items-center gap-3 w-full md:w-auto">
-                                    <button
-                                        onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                                        className={`w-[44px] h-[44px] rounded-xl border flex items-center justify-center transition-colors
-                                        ${isFiltersOpen ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                                    >
-                                        <LuFilter size={20} />
-                                    </button>
-                                    <div className="h-[44px] px-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center text-[13px] font-medium text-gray-600 shrink-0">
-                                        تعداد کل: {String(totalCount || classes.length).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)])}
-                                    </div>
-                                </div>
-
-                                <div className="relative w-full md:w-[320px]">
+                                <div className="relative w-full md:w-[280px]">
                                     <input
                                         type="text"
                                         placeholder="جستجو"
@@ -285,9 +267,21 @@ export default function ClassesPage() {
                                     />
                                     <BsSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 </div>
+
+                                <div className="flex items-center gap-3" dir="ltr">
+                                    <button
+                                        onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                                        className={`w-[44px] h-[44px] rounded-xl border flex items-center justify-center transition-colors
+                                        ${isFiltersOpen ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                                    >
+                                        <LuFilter size={20} />
+                                    </button>
+                                    <div className="h-[44px] px-4 rounded-xl border border-gray-200 bg-gray-50 flex items-center text-[13px] font-medium text-gray-600 shrink-0" dir="rtl">
+                                        تعداد کل: {toPersianDigits(totalCount || classes.length)}
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Expandable Filter Box */}
                             {isFiltersOpen && (
                                 <div className="bg-gray-50/70 border border-gray-100 rounded-[16px] p-6 mb-8 animate-[fadeIn_0.3s_ease-out]">
                                     <div className="flex justify-between items-center mb-6 border-b border-gray-200/60 pb-4">
@@ -305,7 +299,7 @@ export default function ClassesPage() {
                                     <div className="mt-8 flex justify-end">
                                         <button
                                             onClick={handleSearchClick}
-                                            className="w-[120px] h-11 bg-primary-500 text-white rounded-xl text-[13px] font-bold shadow-[0_4px_12px_rgba(124,77,255,0.25)] hover:bg-primary-600 transition-colors"
+                                            className="w-[120px] h-11 bg-primary-500 text-white rounded-full text-[13px] font-bold shadow-[0_4px_12px_rgba(124,77,255,0.25)] hover:bg-primary-600 transition-colors"
                                         >
                                             جستجو
                                         </button>
@@ -313,52 +307,56 @@ export default function ClassesPage() {
                                 </div>
                             )}
 
-                            {/* Table */}
-                            <div className="overflow-x-auto border border-gray-100 rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.015)] bg-white pb-2 flex-1">
-                                <table className="w-full min-w-[800px] text-right">
+                            <div className="overflow-x-auto flex-1">
+                                <table className="w-full min-w-[800px]">
                                     <thead>
-                                        <tr className="bg-gray-50/50">
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%]">روز</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%] text-center">رشته ورزشی</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">جنسیت</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[20%] text-center">مبلغ (تومان)</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">زمان ورزش</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[15%] text-center">تعداد رزرو</th>
-                                            <th className="py-5 px-6 text-[13px] font-bold text-gray-700 w-[10%] text-left">وضعیت</th>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className={`${thClass} w-[15%]`}>روز</th>
+                                            <th className={`${thClass} w-[20%]`}>رشته ورزشی</th>
+                                            <th className={`${thClass} w-[15%]`}>جنسیت</th>
+                                            <th className={`${thClass} w-[20%]`}>مبلغ رزرو (تومان)</th>
+                                            <th className={`${thClass} w-[15%]`}>زمان ورزش</th>
+                                            <th className={`${thClass} w-[10%]`}>تعداد رزرو</th>
+                                            <th className={`${thClass} w-[10%]`}>وضعیت</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {isLoading ? (
                                             <tr>
-                                                <td colSpan={7} className="py-10 text-center text-gray-500 font-medium">
-                                                    در حال دریافت اطلاعات...
+                                                <td colSpan={7} className="py-16">
+                                                    <div className="flex justify-center">
+                                                        <span className="inline-block w-8 h-8 border-[3px] border-primary-200 border-t-primary-500 rounded-full animate-spin" />
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ) : classes.length === 0 ? (
                                             <tr>
-                                                <td colSpan={7} className="py-10 text-center text-gray-500 font-medium">
-                                                    هیچ موردی یافت نشد.
+                                                <td colSpan={7} className="py-16 text-center text-[13px] font-medium text-gray-500">
+                                                    کلاسی یافت نشد
                                                 </td>
                                             </tr>
                                         ) : (
                                             classes.map((cls, index) => (
-                                                <tr key={cls.id} className={`transition-colors hover:bg-gray-50/50 ${index !== classes.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                                    <td className="py-5 px-6 text-[13px] font-medium text-gray-600">{cls.day}</td>
-                                                    <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{cls.sport}</td>
-                                                    <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center">{cls.gender}</td>
-                                                    <td className="py-5 px-6 text-[14px] font-bold text-gray-700 text-center">{cls.price}</td>
-                                                    <td className="py-5 px-6 text-[13px] font-medium text-gray-600 text-center" dir="rtl">{cls.time}</td>
-                                                    <td className="py-5 px-6 text-[14px] font-bold text-gray-700 text-center">{cls.reservations}</td>
-                                                    <td className="py-5 px-6 text-left">
-                                                        {/* Toggle Switch */}
+                                                <tr
+                                                    key={cls.id}
+                                                    className={`transition-colors hover:bg-gray-50/50 ${index !== classes.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                                >
+                                                    <td className={tdClass}>{cls.day}</td>
+                                                    <td className={tdClass}>{cls.sport}</td>
+                                                    <td className={tdClass}>{cls.gender}</td>
+                                                    <td className={tdClass}>{cls.price}</td>
+                                                    <td className={tdClass} dir="ltr">{cls.time}</td>
+                                                    <td className={tdClass}>{toPersianDigits(cls.reservations)}</td>
+                                                    <td className={tdClass}>
                                                         <button
                                                             onClick={() => handleToggleClick(cls)}
-                                                            className={`w-11 h-6 rounded-full relative transition-[background-color] duration-300 ml-1 shrink-0 ${cls.isActive ? 'bg-primary-600' : 'bg-gray-300'}`}
+                                                            className={`w-11 h-6 rounded-full relative transition-[background-color] duration-300 shrink-0 mx-auto block ${cls.isActive ? 'bg-primary-500' : 'bg-gray-300'}`}
                                                         >
                                                             <div
-                                                                className={`w-[20px] h-[20px] rounded-full bg-white absolute top-[2px] shadow-sm transition-all duration-300 ease-in-out`}
-                                                                style={cls.isActive ? { left: '2px', transform: 'translateX(0)' } : { left: 'calc(100% - 22px)', transform: 'translateX(0)' }}
-                                                            ></div>
+                                                                className={`w-[20px] h-[20px] rounded-full bg-white absolute top-[2px] shadow-sm transition-all duration-300 ease-in-out ${
+                                                                    cls.isActive ? 'right-[2px]' : 'right-[22px]'
+                                                                }`}
+                                                            />
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -368,34 +366,10 @@ export default function ClassesPage() {
                                 </table>
                             </div>
 
-                            {/* Pagination Footer */}
                             {!isLoading && classes.length > 0 && (
                                 <div className="flex items-center justify-between mt-8 mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            disabled={page === 1}
-                                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                                        >
-                                            <BsChevronRight size={12} />
-                                        </button>
-                                        <button
-                                            className="w-8 h-8 rounded-full text-[13px] font-bold transition-colors bg-primary-500 text-white shadow-md cursor-default"
-                                            dir="ltr"
-                                        >
-                                            {String(page).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)])}
-                                        </button>
-                                        <button
-                                            disabled={classes.length < size}
-                                            onClick={() => setPage(p => p + 1)}
-                                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                                        >
-                                            <BsChevronLeft size={12} />
-                                        </button>
-                                    </div>
-
                                     <div className="flex items-center gap-2 text-[13px]">
-                                        <span className="text-gray-500">تعداد نمایش: </span>
+                                        <span className="text-gray-500">تعداد نمایش:</span>
                                         <select
                                             value={size}
                                             onChange={(e) => { setSize(Number(e.target.value)); setPage(1); }}
@@ -412,6 +386,41 @@ export default function ClassesPage() {
                                             <option value={50}>۵۰</option>
                                         </select>
                                     </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                                            disabled={page <= 1}
+                                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <BsChevronRight size={12} />
+                                        </button>
+                                        {pageNumbers.map((pageNum, idx) => (
+                                            typeof pageNum === 'number' ? (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setPage(pageNum)}
+                                                    className={`w-8 h-8 rounded-full text-[13px] font-bold transition-colors ${
+                                                        pageNum === page
+                                                            ? 'bg-primary-500 text-white'
+                                                            : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                    }`}
+                                                    dir="ltr"
+                                                >
+                                                    {toPersianDigits(pageNum)}
+                                                </button>
+                                            ) : (
+                                                <span key={idx} className="w-8 h-8 flex items-center justify-center text-[13px] font-bold text-gray-400">…</span>
+                                            )
+                                        ))}
+                                        <button
+                                            onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                                            disabled={page >= pageCount}
+                                            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                        >
+                                            <BsChevronLeft size={12} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
@@ -420,7 +429,6 @@ export default function ClassesPage() {
                 </main>
             </div>
 
-            {/* Modals */}
             <StatusToggleModal
                 isOpen={statusModal.isOpen}
                 onClose={() => setStatusModal({ isOpen: false, classData: null })}

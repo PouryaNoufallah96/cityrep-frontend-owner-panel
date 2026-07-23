@@ -1,4 +1,5 @@
 import { LuTriangleAlert, LuX } from 'react-icons/lu';
+import { toPersianDigits } from '../../../utils/format';
 
 export interface ClassItemData {
     id: string;
@@ -30,7 +31,6 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" dir="rtl">
             <div className="bg-white rounded-[20px] w-full max-w-[440px] shadow-2xl relative animate-[scaleIn_0.2s_ease-out] p-6 pb-8">
 
-                {/* Close Button */}
                 <button onClick={onClose} className="absolute top-4 left-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
                     <LuX size={20} />
                 </button>
@@ -47,7 +47,6 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
                     </p>
                 </div>
 
-                {/* Details list */}
                 <div className="flex flex-col gap-3 py-6 px-4 bg-gray-50/50 rounded-xl mb-6 border border-gray-100">
                     <div className="flex justify-between items-center text-[13px]">
                         <span className="text-gray-500">روز</span>
@@ -67,15 +66,14 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
                     </div>
                     <div className="flex justify-between items-center text-[13px]">
                         <span className="text-gray-500">زمان ورزش</span>
-                        <span className="font-semibold text-gray-800" dir="rtl">{classData.time}</span>
+                        <span className="font-semibold text-gray-800" dir="ltr">{classData.time}</span>
                     </div>
                     <div className="flex justify-between items-center text-[13px]">
                         <span className="text-gray-500">تعداد رزرو</span>
-                        <span className="font-semibold text-gray-800">{classData.reservations}</span>
+                        <span className="font-semibold text-gray-800">{toPersianDigits(classData.reservations)}</span>
                     </div>
                 </div>
 
-                {/* Warning box */}
                 <div className="flex gap-3 p-4 bg-amber-50 rounded-xl mb-7 border border-amber-100/50">
                     <LuTriangleAlert className="text-amber-500 shrink-0 mt-0.5" size={18} />
                     <p className="text-[12px] text-amber-700 font-medium leading-relaxed">
@@ -86,19 +84,11 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
                     </p>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-4">
-                    <button
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="flex-1 h-[48px] bg-white border border-gray-200 text-gray-600 rounded-[12px] text-[14px] font-bold hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        انصراف
-                    </button>
+                <div className="flex gap-3">
                     <button
                         onClick={onConfirm}
                         disabled={isLoading}
-                        className="flex-1 h-[48px] bg-primary-600 text-white rounded-[12px] text-[14px] font-bold hover:bg-primary-700 transition-colors shadow-[0_4px_12px_rgba(124,77,255,0.25)] disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2"
+                        className="flex-1 py-3 bg-primary-500 text-white rounded-full text-[13px] font-bold hover:bg-primary-600 transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <>
@@ -108,6 +98,13 @@ export default function StatusToggleModal({ isOpen, onClose, onConfirm, classDat
                         ) : (
                             'تایید'
                         )}
+                    </button>
+                    <button
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-full text-[13px] font-bold hover:bg-gray-50 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                        انصراف
                     </button>
                 </div>
 
