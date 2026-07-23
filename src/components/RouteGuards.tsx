@@ -12,7 +12,6 @@ const LoadingSpinner = () => (
     </div>
 );
 
-/** Redirects unauthenticated users to /login */
 export function ProtectedRoute({ children }: Props) {
     const { isAuthenticated, isLoading } = useAuth();
 
@@ -27,7 +26,6 @@ export function ProtectedRoute({ children }: Props) {
     return <>{children}</>;
 }
 
-/** Redirects authenticated users away from login */
 export function GuestRoute({ children }: Props) {
     const { isAuthenticated, isLoading } = useAuth();
 
@@ -42,13 +40,6 @@ export function GuestRoute({ children }: Props) {
     return <>{children}</>;
 }
 
-/** 
- * For pages that require a gym (dashboard, profile, schedule, etc.)
- * - Not authenticated → /login
- * - Authenticated but hasGym not yet checked → show loading
- * - Authenticated but no gym → /register
- * - Authenticated and has gym → render children
- */
 export function GymOwnerRoute({ children }: Props) {
     const { isAuthenticated, isLoading, hasGym } = useAuth();
 
@@ -60,7 +51,6 @@ export function GymOwnerRoute({ children }: Props) {
         return <Navigate to="/login" replace />;
     }
 
-    // Still checking gyms
     if (hasGym === null) {
         return <LoadingSpinner />;
     }
@@ -72,15 +62,8 @@ export function GymOwnerRoute({ children }: Props) {
     return <>{children}</>;
 }
 
-/**
- * For the /register page only
- * - Not authenticated → /login
- * - Authenticated and already has a gym → /dashboard
- * - Authenticated and no gym → render register page
- */
 export function RegisterRoute({ children }: Props) {
     const { isAuthenticated, isLoading, hasGym } = useAuth();
-
     if (isLoading) {
         return <LoadingSpinner />;
     }
@@ -89,7 +72,6 @@ export function RegisterRoute({ children }: Props) {
         return <Navigate to="/login" replace />;
     }
 
-    // Still checking gyms
     if (hasGym === null) {
         return <LoadingSpinner />;
     }

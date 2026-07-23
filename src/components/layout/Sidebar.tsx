@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BsGrid, BsPerson, BsCalendar3, BsPeople, BsViewList } from 'react-icons/bs';
 import Logo from '../Logo';
-import { useAuth } from '../../context/AuthContext';
 
 const SIDEBAR_ITEMS = [
     { label: 'داشبورد', icon: BsGrid, path: '/dashboard' },
@@ -14,42 +13,37 @@ const SIDEBAR_ITEMS = [
 export default function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useAuth();
 
     return (
         <aside className="w-[240px] bg-white border-l border-gray-200 py-7 flex flex-col shrink-0 max-lg:hidden min-h-screen sticky top-0">
-            <div className="px-6 mb-9">
+            <div className="px-6 mb-9 flex justify-center">
                 <Logo size={36} textClassName="text-xl font-bold text-primary-700" />
             </div>
 
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1 px-3">
                 {SIDEBAR_ITEMS.map((item) => {
-                    const isActive = location.pathname.startsWith(item.path);
+                    const isActive =
+                        location.pathname.startsWith(item.path) ||
+                        (item.path === '/profile' && location.pathname.startsWith('/register'));
                     return (
                         <button
                             key={item.label}
                             onClick={() => navigate(item.path)}
-                            className={`flex items-center gap-2.5 px-6 py-3 text-sm transition-colors relative
+                            className={`relative flex items-center gap-2.5 px-4 py-3 text-sm transition-colors rounded-xl
                 ${isActive
-                                    ? 'bg-primary-50 text-primary-600 font-semibold before:absolute before:right-0 before:top-0 before:bottom-0 before:w-[3px] before:bg-primary-500 before:rounded-l-md'
+                                    ? 'bg-primary-50 text-primary-600 font-semibold'
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                 }`}
                         >
+                            {isActive && (
+                                <span className="absolute right-0 top-2 bottom-2 w-[3px] rounded-full bg-primary-500" />
+                            )}
                             <item.icon className="text-lg" />
                             {item.label}
                         </button>
                     );
                 })}
             </nav>
-
-            <div className="mt-auto px-6">
-                <button
-                    onClick={logout}
-                    className="w-full py-2.5 text-sm text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                    خروج
-                </button>
-            </div>
         </aside>
     );
 }

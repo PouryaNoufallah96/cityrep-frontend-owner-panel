@@ -27,7 +27,6 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Guest-only routes (redirect to dashboard if logged in) */}
             <Route
               path="/login"
               element={
@@ -37,7 +36,6 @@ function App() {
               }
             />
 
-            {/* Register route (only accessible if authenticated but has NO gym) */}
             <Route
               path="/register"
               element={
@@ -47,7 +45,6 @@ function App() {
               }
             />
 
-            {/* Gym owner routes (require authentication AND at least one gym) */}
             <Route
               path="/dashboard"
               element={
@@ -89,23 +86,23 @@ function App() {
               }
             />
 
-            {/* Default redirect */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
 
         <ToastContainer
-          position="top-center"
+          position="top-right"
           autoClose={3000}
-          hideProgressBar={false}
+          hideProgressBar
           newestOnTop
           closeOnClick
           rtl
           pauseOnFocusLoss={false}
-          draggable
+          draggable={false}
           pauseOnHover
           theme="light"
+          closeButton
         />
       </AuthProvider>
     </QueryClientProvider>

@@ -12,7 +12,7 @@ export default function Logo({
     textClassName = 'text-xl font-bold text-primary-700',
 }: LogoProps) {
     return (
-        <div className={`flex items-center gap-2.5 ${className}`}>
+        <div dir="ltr" className={`flex items-center gap-2.5 ${className}`}>
             <svg
                 width={size}
                 height={size}

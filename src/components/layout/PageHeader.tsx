@@ -32,10 +32,10 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
     };
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
+        <div className="bg-white rounded-2xl px-5 py-3 border border-gray-100 flex items-center justify-between w-full">
+            <div className="flex items-center gap-2.5">
                 <div className="w-2 h-2 rounded-full bg-primary-500" />
-                <h1 className="text-base font-bold text-gray-800">{title}</h1>
+                <h1 className="text-sm font-bold text-gray-800">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
                 {subtitle && (
@@ -46,10 +46,10 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
+                        className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
                         id="header-profile-btn"
                     >
-                        <BsPerson size={24} />
+                        <BsPerson size={20} />
                     </button>
 
                     {isMenuOpen && (

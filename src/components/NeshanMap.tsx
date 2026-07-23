@@ -8,6 +8,7 @@ interface NeshanMapProps {
     hideSearch?: boolean;
     hideCoordinates?: boolean;
     readOnly?: boolean;
+    markerColor?: 'default' | 'primary';
 }
 
 declare global {
@@ -20,6 +21,13 @@ const NESHAN_MAP_API_KEY = 'web.59e7c4d7f7ab4ab2a22c05b35fe88459';
 const NESHAN_MAP_SDK_URL = 'https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.js';
 const NESHAN_MAP_CSS_URL = 'https://static.neshan.org/sdk/leaflet/v1.9.4/neshan-sdk/v1.0.8/index.css';
 
+const PRIMARY_MARKER_SVG = encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42" fill="none">
+      <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 26 16 26s16-14 16-26C32 7.163 24.837 0 16 0z" fill="#3C25C9"/>
+      <circle cx="16" cy="16" r="6" fill="white"/>
+    </svg>`
+);
+
 export default function NeshanMap({
     latitude = 35.6892,
     longitude = 51.389,
@@ -28,6 +36,7 @@ export default function NeshanMap({
     hideSearch = false,
     hideCoordinates = false,
     readOnly = false,
+    markerColor = 'default',
 }: NeshanMapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<any>(null);
@@ -35,7 +44,6 @@ export default function NeshanMap({
     const [isLoaded, setIsLoaded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Load CSS
     useEffect(() => {
         if (!document.querySelector(`link[href="${NESHAN_MAP_CSS_URL}"]`)) {
             const link = document.createElement('link');
@@ -45,7 +53,6 @@ export default function NeshanMap({
         }
     }, []);
 
-    // Load SDK
     useEffect(() => {
         if (window.L && window.L.map) {
             setIsLoaded(true);
@@ -76,7 +83,6 @@ export default function NeshanMap({
         document.head.appendChild(script);
     }, []);
 
-    // Initialize map
     useEffect(() => {
         if (!isLoaded || !mapContainerRef.current || mapRef.current) return;
 
@@ -97,18 +103,25 @@ export default function NeshanMap({
 
             mapRef.current = map;
 
-            // Add marker
-            const marker = window.L.marker([latitude, longitude], { draggable: !readOnly }).addTo(map);
+            const markerOptions: { draggable: boolean; icon?: unknown } = { draggable: !readOnly };
+            if (markerColor === 'primary') {
+                markerOptions.icon = window.L.icon({
+                    iconUrl: `data:image/svg+xml;charset=UTF-8,${PRIMARY_MARKER_SVG}`,
+                    iconSize: [32, 42],
+                    iconAnchor: [16, 42],
+                    popupAnchor: [0, -36],
+                });
+            }
+
+            const marker = window.L.marker([latitude, longitude], markerOptions).addTo(map);
             markerRef.current = marker;
 
             if (!readOnly) {
-                // Marker drag end
                 marker.on('dragend', () => {
                     const pos = marker.getLatLng();
                     onLocationChange(pos.lat, pos.lng);
                 });
 
-                // Map click
                 map.on('click', (e: any) => {
                     const { lat, lng } = e.latlng;
                     marker.setLatLng([lat, lng]);
@@ -125,9 +138,8 @@ export default function NeshanMap({
                 mapRef.current = null;
             }
         };
-    }, [isLoaded, readOnly]);
+    }, [isLoaded, readOnly, markerColor]);
 
-    // Update marker when lat/lng props change externally
     useEffect(() => {
         if (markerRef.current && latitude && longitude) {
             markerRef.current.setLatLng([latitude, longitude]);
@@ -158,7 +170,6 @@ export default function NeshanMap({
 
     return (
         <div className="w-full flex flex-col h-full bg-white">
-            {/* Search */}
             {!hideSearch && !readOnly && (
                 <div className="flex gap-2 mb-3">
                     <input
@@ -180,8 +191,7 @@ export default function NeshanMap({
                 </div>
             )}
 
-            {/* Map */}
-            <div className={`relative rounded-xl overflow-hidden border border-gray-200 flex-1 min-h-0 ${!readOnly ? 'shadow-sm' : 'border-none'}`}>
+            <div className={`relative rounded-xl overflow-hidden border border-gray-200 flex-1 min-h-0 ${readOnly ? 'border-none' : ''}`}>
                 {!isLoaded && (
                     <div
                         className="flex items-center justify-center bg-gray-50 text-gray-400 text-sm"
@@ -198,7 +208,6 @@ export default function NeshanMap({
                 />
             </div>
 
-            {/* Coordinates display */}
             {!hideCoordinates && !readOnly && latitude && longitude && (
                 <div className="flex gap-4 mt-3 text-xs text-gray-400" dir="ltr">
                     <span>Lat: {latitude.toFixed(6)}</span>
