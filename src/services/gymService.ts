@@ -38,7 +38,6 @@ export interface GymTrendInfoUpdate {
 export interface AddGymPayload {
     title: string;
     description?: string;
-    // level?: string;
     address?: AddressInfoUpdate;
     contact?: {
         phoneNumber?: string;
@@ -148,14 +147,33 @@ export interface ToggleGymActivityTrendPayload {
     gymTrendId: string;
 }
 
+export interface GymOwnerOverview {
+    totalReserved: number;
+    totalActiveReserved: number;
+    totalIncome: number;
+}
+
+export interface GymTrendCapacity {
+    gymTrendId: string;
+    gymTrendTitle: string;
+    totalCapacity: number;
+    totalUsedCapacity: number;
+}
+
+export interface WeeklyReservation {
+    dayOfWeek: string;
+    count: number;
+}
+
+export interface SessionPriceBand {
+    level: string;
+    fromPrice: number;
+    toPrice: number;
+}
+
 export const gymService = {
     async addGym(data: AddGymPayload) {
         const response = await api.post('/Gym/AddGym', data);
-        return response.data;
-    },
-
-    async editGym(data: AddGymPayload & { gymId: string }) {
-        const response = await api.post('/Gym/EditGym', data);
         return response.data;
     },
 
@@ -187,5 +205,25 @@ export const gymService = {
     async toggleGymActivityTrend(data: ToggleGymActivityTrendPayload) {
         const response = await api.post('/Gym/ToggleGymActivityTrend', data);
         return response.data;
+    },
+
+    async getGymOwnerOverview(): Promise<GymOwnerOverview> {
+        const response = await api.get('/Report/GetGymOwnerOverview');
+        return response.data.data;
+    },
+
+    async getGymTrendCapacityOverview(): Promise<GymTrendCapacity[]> {
+        const response = await api.get('/Report/GetGymTrendCapacityOverview');
+        return response.data?.data ?? [];
+    },
+
+    async getCurrentWeekReservations(): Promise<WeeklyReservation[]> {
+        const response = await api.get('/Report/GetCurrentWeekReservations');
+        return response.data?.data ?? [];
+    },
+
+    async getSessionPriceBand(): Promise<SessionPriceBand> {
+        const response = await api.post('/Gym/GetSessionPriceBand');
+        return response.data.data;
     },
 };

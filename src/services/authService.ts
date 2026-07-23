@@ -59,7 +59,6 @@ export interface GymOwnerData {
 }
 
 
-// Client credentials from env
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
 const CLIENT_SECRET = import.meta.env.VITE_CLIENT_SECRET;
 const TOKEN_KEY = import.meta.env.VITE_TOKEN_KEY || 'xfit_access_token';
@@ -86,7 +85,7 @@ export const authService = {
 
     async getGymOwnerData(): Promise<GymOwnerData> {
         const response = await api.get('/GymOwner/GetGymOnwerData');
-        return response.data;
+        return response.data.data;
     },
 
     async renewToken(): Promise<any> {

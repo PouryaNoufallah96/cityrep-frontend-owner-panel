@@ -69,3 +69,32 @@ export function useToggleGymActivityTrend() {
         },
     });
 }
+
+export function useGymOwnerOverview() {
+    return useQuery({
+        queryKey: ['gymOwnerOverview'],
+        queryFn: () => gymService.getGymOwnerOverview(),
+    });
+}
+
+export function useGymTrendCapacity() {
+    return useQuery({
+        queryKey: ['gymTrendCapacity'],
+        queryFn: () => gymService.getGymTrendCapacityOverview(),
+    });
+}
+
+export function useCurrentWeekReservations() {
+    return useQuery({
+        queryKey: ['currentWeekReservations'],
+        queryFn: () => gymService.getCurrentWeekReservations(),
+    });
+}
+
+export function useSessionPriceBand() {
+    return useQuery({
+        queryKey: ['sessionPriceBand'],
+        queryFn: () => gymService.getSessionPriceBand(),
+        staleTime: 1000 * 60 * 10,
+    });
+}

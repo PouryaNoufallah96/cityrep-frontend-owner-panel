@@ -10,6 +10,7 @@ interface AuthContextType {
     login: (accessToken: string, refreshToken?: string) => void;
     logout: () => void;
     setGymOwner: (data: GymOwnerData) => void;
+    setHasGym: (value: boolean | null) => void;
     recheckGyms: () => Promise<void>;
 }
 
@@ -59,7 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // Auto-check gyms when user becomes authenticated (post-login flow)
     useEffect(() => {
         if (isAuthenticated && hasGym === null && !isLoading) {
             checkGyms();
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, gymOwner, hasGym, isLoading, login, logout, setGymOwner, recheckGyms }}>
+        <AuthContext.Provider value={{ isAuthenticated, gymOwner, hasGym, isLoading, login, logout, setGymOwner, setHasGym, recheckGyms }}>
             {children}
         </AuthContext.Provider>
     );
