@@ -5,7 +5,6 @@ interface TrendItem {
     gymTrendId: string;
     title: string;
     iconUrl?: string;
-    iconKey?: string;
 }
 
 interface SportTrendsStepProps extends StepProps {
@@ -33,7 +32,6 @@ export default function SportTrendsStep({ formData, toggleTrend, trends }: Sport
                             <TrendIcon
                                 title={trend.title}
                                 iconUrl={trend.iconUrl}
-                                iconKey={trend.iconKey}
                                 selected={selected}
                                 className={`w-5 h-5 shrink-0 ${selected ? 'text-primary-500' : 'text-primary-400'}`}
                             />

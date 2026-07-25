@@ -33,17 +33,17 @@ const STEPS = [
 ];
 
 const SPORT_TRENDS_FALLBACK = [
-    { gymTrendId: '1', title: 'فیتنس', iconKey: 'fitness' },
-    { gymTrendId: '2', title: 'بدنسازی', iconKey: 'bodybuilding' },
-    { gymTrendId: '3', title: 'پیلاتس', iconKey: 'pilates' },
-    { gymTrendId: '4', title: 'پیلاتس ریفرمر', iconKey: 'reformer' },
-    { gymTrendId: '5', title: 'آمادگی جسمانی', iconKey: 'physical' },
-    { gymTrendId: '6', title: 'ایریال یوگا', iconKey: 'aerial' },
-    { gymTrendId: '8', title: 'آکرو یوگا', iconKey: 'acro' },
-    { gymTrendId: '7', title: 'یوگا', iconKey: 'yoga' },
-    { gymTrendId: '10', title: 'کششی', iconKey: 'stretch' },
-    { gymTrendId: '9', title: 'تمرینات قدرتی', iconKey: 'strength' },
-    { gymTrendId: '11', title: 'کراس فیت', iconKey: 'crossfit' },
+    { gymTrendId: '1', title: 'فیتنس' },
+    { gymTrendId: '2', title: 'بدنسازی' },
+    { gymTrendId: '3', title: 'پیلاتس' },
+    { gymTrendId: '4', title: 'پیلاتس ریفرمر' },
+    { gymTrendId: '5', title: 'آمادگی جسمانی' },
+    { gymTrendId: '6', title: 'ایریال یوگا' },
+    { gymTrendId: '8', title: 'آکرو یوگا' },
+    { gymTrendId: '7', title: 'یوگا' },
+    { gymTrendId: '10', title: 'کششی' },
+    { gymTrendId: '9', title: 'تمرینات قدرتی' },
+    { gymTrendId: '11', title: 'کراس فیت' },
 ];
 
 export default function RegisterPage() {
