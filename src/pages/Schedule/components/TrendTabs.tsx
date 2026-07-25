@@ -1,7 +1,7 @@
 import TrendIcon from '../../../components/ui/TrendIcon';
 
 interface TrendTabsProps {
-    trends: { id: string; title: string; iconUrl?: string; iconKey?: string }[];
+    trends: { id: string; title: string; iconUrl?: string }[];
     selectedTrend: string;
     setSelectedTrend: (id: string) => void;
 }
@@ -23,7 +23,6 @@ export default function TrendTabs({ trends, selectedTrend, setSelectedTrend }: T
                         <TrendIcon
                             title={trend.title}
                             iconUrl={trend.iconUrl}
-                            iconKey={trend.iconKey}
                             selected={isActive}
                             chip
                             chipClassName={`w-11 h-11 ${isActive ? 'bg-white' : 'bg-primary-50'}`}
